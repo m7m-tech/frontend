@@ -20,6 +20,14 @@ const EmailVerification = () => {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const inputRefs = useRef([]);
 
+  // API & State Handling
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [apiError, setApiError] = useState("");
+
+  // Retrieve draft email saved during registration
+  const draftData = JSON.parse(localStorage.getItem("smartroute-register-draft") || "{}");
+  const userEmail = draftData.email || "";
+
   // Countdown & Toast State
   const [timer, setTimer] = useState(58);
   const [showToast, setShowToast] = useState(false);
@@ -36,21 +44,23 @@ const EmailVerification = () => {
   }, [timer]);
 
   // Handle manual resend click
-  const handleResendCode = () => {
+  const handleResendCode = async () => {
     if (timer > 0) return;
 
-    // 1. Reset timer back to 58 seconds
-    setTimer(59);
+    setApiError("");
+    try {
+      // API call to resend OTP if available, e.g.:
+      // await fetch("http://localhost:3000/auth/resend-otp", { method: "POST", body: JSON.stringify({ email: userEmail }) });
 
-    // 2. Show styled toast notification
-    setShowToast(true);
+      setTimer(59);
+      setShowToast(true);
 
-    // 3. Auto-hide toast after 4 seconds
-    setTimeout(() => {
-      setShowToast(false);
-    }, 4000);
-
-    // TODO: Add your API call here to actually resend the OTP email
+      setTimeout(() => {
+        setShowToast(false);
+      }, 4000);
+    } catch (err) {
+      setApiError("Failed to resend code. Please try again.");
+    }
   };
 
   const handleChange = (value, index) => {
@@ -91,9 +101,7 @@ const EmailVerification = () => {
       .replace(/\D/g, "")
       .slice(0, 6);
 
-    if (!pastedData) {
-      return;
-    }
+    if (!pastedData) return;
 
     const newOtp = [...otp];
     pastedData.split("").forEach((digit, index) => {
@@ -120,30 +128,49 @@ const EmailVerification = () => {
 
   const isCodeComplete = otp.every((digit) => digit !== "");
 
-  const handleVerify = (e) => {
-    if (e) {
-      e.preventDefault();
-    }
+  // API Call to verify OTP
+  const handleVerify = async (e) => {
+    if (e) e.preventDefault();
 
     const code = otp.join("");
-    if (code.length < 6) {
-      return;
+    if (code.length < 6 || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setApiError("");
+
+    try {
+      const response = await fetch("http://localhost:3000/auth/verify-otp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: userEmail,
+          otp: code,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Invalid verification code");
+      }
+
+      if (verifyEmail) {
+        await verifyEmail(code);
+      }
+
+      navigate("/account-under-review", { replace: true });
+    } catch (err) {
+      setApiError(err.message || "Invalid verification code. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    verifyEmail();
-    navigate("/account-under-review", { replace: true });
   };
-
-//   useEffect(() => {
-//     const code = otp.join("");
-//     if (code.length === 6) {
-//       handleVerify(null);
-//     }
-//   }, [otp]);
 
   return (
     <div className="relative min-h-screen flex flex-col justify-between bg-slate-100/70 text-slate-800 font-sans">
-      {/* Styled Toast Notification */}
+      {/* Toast Notification */}
       {showToast && (
         <div className="fixed top-5 right-5 z-50 flex items-center gap-3 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-slate-700 transition-all duration-300 animate-bounce-short">
           <HiOutlineCheckCircle className="text-emerald-400 text-xl shrink-0" />
@@ -160,7 +187,7 @@ const EmailVerification = () => {
       <header className="w-full bg-white border-b border-slate-200/80 px-8 py-3.5 flex items-center justify-between shadow-xs">
         <div className="flex items-center justify-center space-x-1">
           <div className="w-8 h-8">
-            <img src={logo} alt="" />
+            <img src={logo} alt="SmartRoute" />
           </div>
           <span className="text-2xl font-bold text-slate-900 tracking-tight">
             SmartRoute
@@ -187,8 +214,8 @@ const EmailVerification = () => {
             Email Verification
           </h1>
           <p className="mt-2 text-sm text-slate-500 leading-relaxed max-w-sm mx-auto">
-            Please use the verification code sent to your email below to sign in
-            to your account.
+            Please enter the 6-digit verification code sent to{" "}
+            <span className="font-semibold text-slate-700">{userEmail || "your email"}</span>.
           </p>
 
           {/* Stepper Progress */}
@@ -227,6 +254,13 @@ const EmailVerification = () => {
             </div>
           </div>
 
+          {/* Error Alert Box */}
+          {apiError && (
+            <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs font-medium">
+              {apiError}
+            </div>
+          )}
+
           {/* OTP Input Fields */}
           <form onSubmit={handleVerify}>
             <div className="flex justify-center items-center gap-2.5 my-6">
@@ -238,10 +272,11 @@ const EmailVerification = () => {
                   inputMode="numeric"
                   maxLength={1}
                   value={digit}
+                  disabled={isSubmitting}
                   onChange={(e) => handleChange(e.target.value, index)}
                   onKeyDown={(e) => handleKeyDown(e, index)}
                   onPaste={index === 0 ? handlePaste : undefined}
-                  className={`w-11 h-13 text-center text-lg font-semibold rounded-lg border bg-slate-50/50 focus:bg-white focus:outline-none transition-all border-slate-200 focus:border-emerald-500`}
+                  className="w-11 h-13 text-center text-lg font-semibold rounded-lg border bg-slate-50/50 focus:bg-white focus:outline-none transition-all border-slate-200 focus:border-emerald-500 disabled:opacity-50"
                 />
               ))}
             </div>
@@ -266,14 +301,14 @@ const EmailVerification = () => {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={!isCodeComplete}
-              className={`w-full font-medium p-3.5 rounded-xl transition-all duration-500 ease-in-out text-sm flex items-center justify-center ${
-                isCodeComplete
-                  ? "bg-gradient-to-l from-[#4edea3] via-[#009668] to-[#007d56] bg-[length:200%_100%] bg-right hover:bg-left text-white shadow-md hover:shadow-lg active:scale-[0.99]"
+              disabled={!isCodeComplete || isSubmitting}
+              className={`w-full font-medium p-3.5 rounded-xl transition-all duration-500 ease-in-out text-sm flex items-center justify-center gap-2 ${
+                isCodeComplete && !isSubmitting
+                  ? "bg-gradient-to-l from-[#4edea3] via-[#009668] to-[#007d56] bg-[length:200%_100%] bg-right hover:bg-left text-white shadow-md hover:shadow-lg active:scale-[0.99] cursor-pointer"
                   : "bg-slate-200 text-slate-500 cursor-not-allowed"
               }`}
             >
-              <span>Verify & Complete Setup</span>
+              <span>{isSubmitting ? "Verifying..." : "Verify & Complete Setup"}</span>
               <HiChevronRight className="text-base" />
             </button>
           </form>

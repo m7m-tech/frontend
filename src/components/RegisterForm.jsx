@@ -80,35 +80,42 @@ const RegisterForm = () => {
     initialValues: getSavedDraft(),
     validationSchema: registerSchema,
     onSubmit: async (values) => {
+      setApiError("");
+      setIsSubmitting(true);
+
+      const fullPhoneNumber = `${dialCode}${values.phone}`;
+      const payload = {
+        fullName: values.fullName,
+        email: values.email,
+        password: values.password,
+        phone: fullPhoneNumber,
+        role: "FLEET_OWNER",
+      };
+
       try {
-        const fullPhoneNumber = `${dialCode}${values.phone}`;
-        const payload = { ...values, phone: fullPhoneNumber };
+        const result = await register(payload);
 
-        console.log("Registration Payload:", payload);
+        if (result.success) {
+          const draftPayload = {
+            ...values,
+            phone: fullPhoneNumber,
+            dialCode,
+            password: "",
+            confirmPassword: "",
+          };
+          localStorage.setItem(
+            "smartroute-register-draft",
+            JSON.stringify(draftPayload),
+          );
 
-        const draftPayload = {
-          ...values,
-          phone: fullPhoneNumber,
-          dialCode,
-          password: "",
-          confirmPassword: "",
-        };
-
-        localStorage.setItem(
-          "smartroute-register-draft",
-          JSON.stringify(draftPayload),
-        );
-
-        register({
-          email: values.email,
-          fullName: values.fullName,
-          companyName: values.companyName,
-          phone: fullPhoneNumber,
-        });
-
-        navigate("/verification");
+          navigate("/verification");
+        } else {
+          setApiError(result.message || "Registration failed");
+        }
       } catch (error) {
-        console.error("Registration failed:", error);
+        setApiError("An unexpected error occurred. Please try again.");
+      } finally {
+        setIsSubmitting(false);
       }
     },
   });
@@ -425,7 +432,10 @@ const RegisterForm = () => {
       {/* Sign In Link */}
       <p className="text-center text-xs text-slate-500 pt-1">
         Already have an account?{" "}
-        <Link to="/login" className="font-medium text-emerald-600 hover:underline">
+        <Link
+          to="/login"
+          className="font-medium text-emerald-600 hover:underline"
+        >
           Sign In
         </Link>
       </p>

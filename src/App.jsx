@@ -91,10 +91,6 @@ function App() {
             path="/password-email-verification"
             element={<PasswordEmailVerification />}
           />
-          <Route
-            path="/passwordEmailVerfication"
-            element={<PasswordEmailVerification />}
-          />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route
             path="/register"

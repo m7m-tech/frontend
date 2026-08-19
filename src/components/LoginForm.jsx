@@ -27,6 +27,7 @@ const loginSchema = Yup.object({
 
 const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [apiError, setApiError] = useState("");
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -37,19 +38,27 @@ const LoginForm = () => {
       rememberMe: false,
     },
     validationSchema: loginSchema,
-    onSubmit: (values) => {
-      login({
-        email: values.email,
-        name: values.email.split("@")[0],
-        rememberMe: values.rememberMe,
-      });
-      navigate("/account-under-review");
+    onSubmit: async (values, { setSubmitting }) => {
+      setApiError("");
+      try {
+        const result = await login(values.email, values.password);
+        if (result.success) {
+          navigate("/account-under-review");
+        } else {
+          setApiError(result.message);
+        }
+      } catch (err) {
+        setApiError("Something went wrong. Please try again.");
+      } finally {
+        setSubmitting(false);
+      }
     },
   });
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-6 ">
-      <img src={logo} alt="" className="w-30 mx-auto mb-7 md:hidden " />
+    <div className="w-full max-w-md mx-auto space-y-6">
+      <img src={logo} alt="" className="w-30 mx-auto mb-7 md:hidden" />
+      
       {/* Header */}
       <div className="text-center space-y-2">
         <h2 className="text-3xl font-bold text-slate-900">
@@ -59,6 +68,13 @@ const LoginForm = () => {
           Enter your credentials to access your operation controls.
         </p>
       </div>
+
+      {/* Global API Error Alert */}
+      {apiError && (
+        <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl text-center">
+          {apiError}
+        </div>
+      )}
 
       {/* Form */}
       <form onSubmit={formik.handleSubmit} className="w-full space-y-4">
@@ -94,7 +110,6 @@ const LoginForm = () => {
             <label className="block text-sm font-semibold text-slate-800">
               Password
             </label>
-  
           </div>
           <div className="relative w-full">
             <HiOutlineLockClosed className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-500 text-xl" />
@@ -124,12 +139,15 @@ const LoginForm = () => {
             </button>
           </div>
           <a
-              href="#forgot"
-              className="text-sm font-medium text-emerald-600 hover:underline"
-              onClick={()=> navigate("/email-forgot-password")}
-            >
-              Forgot Password?
-            </a>
+            href="#forgot"
+            className="text-sm font-medium text-emerald-600 hover:underline"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate("/email-forgot-password");
+            }}
+          >
+            Forgot Password?
+          </a>
           {formik.touched.password && formik.errors.password && (
             <p className="text-red-500 text-xs mt-1">
               {formik.errors.password}
@@ -158,10 +176,11 @@ const LoginForm = () => {
         {/* Submit Button */}
         <button
           type="submit"
-          className="w-full bg-gradient-to-l from-[#4edea3] via-[#009668] to-[#007d56] bg-[length:200%_100%] bg-right hover:bg-left text-white font-medium p-3.5 rounded-xl transition-all duration-500 ease-in-out shadow-md hover:shadow-lg active:scale-[0.99] text-lg flex justify-center items-center gap-1"
+          disabled={formik.isSubmitting}
+          className="w-full bg-gradient-to-l from-[#4edea3] via-[#009668] to-[#007d56] bg-[length:200%_100%] bg-right hover:bg-left text-white font-medium p-3.5 rounded-xl transition-all duration-500 ease-in-out shadow-md hover:shadow-lg active:scale-[0.99] text-lg flex justify-center items-center gap-1 disabled:opacity-50"
         >
-          <span>Sign In</span>
-          <FaArrowRight className="text-sm" />
+          <span>{formik.isSubmitting ? "Signing in..." : "Sign In"}</span>
+          {!formik.isSubmitting && <FaArrowRight className="text-sm" />}
         </button>
       </form>
 
