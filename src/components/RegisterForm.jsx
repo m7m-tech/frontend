@@ -4,6 +4,7 @@ import * as Yup from "yup";
 import { Link, useNavigate } from "react-router-dom";
 import { HiOutlineEye, HiOutlineEyeOff } from "react-icons/hi";
 import { useAuth } from "../context/AuthContext";
+import logo from "../assets/logo.png";
 
 const registerSchema = Yup.object({
   fullName: Yup.string().required("Full name is required"),
@@ -128,12 +129,13 @@ const RegisterForm = () => {
 
   return (
     <div className="w-full max-w-lg mx-auto space-y-5">
+      <img src={logo} alt="" className="w-30 mx-auto mb-7 md:w-35 lg:hidden " />
       {/* Header */}
       <div className="text-center space-y-1">
-        <h2 className="text-2xl font-bold text-slate-900">
+        <h2 className="text-2xl md:text-5xl lg:text-3xl font-bold text-slate-900">
           Register Fleet Owner
         </h2>
-        <p className="text-slate-500 text-xs">
+        <p className="text-slate-500 text-xs md:text-lg lg:text-base">
           Get started with your dedicated dispatch control center.
         </p>
       </div>
@@ -143,7 +145,7 @@ const RegisterForm = () => {
         {/* Full Name & Company Name */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1 text-left">
-            <label className="block text-md font-semibold text-slate-800">
+            <label className="block font-semibold text-slate-800">
               Full Name
             </label>
             <input
@@ -167,7 +169,7 @@ const RegisterForm = () => {
           </div>
 
           <div className="space-y-1 text-left">
-            <label className="block text-md font-semibold text-slate-800">
+            <label className="block font-semibold text-slate-800">
               Company/Fleet Name
             </label>
             <input
@@ -193,7 +195,7 @@ const RegisterForm = () => {
 
         {/* Business Email */}
         <div className="space-y-1 text-left">
-          <label className="block text-md font-semibold text-slate-800">
+          <label className="block font-semibold text-slate-800">
             Business Email
           </label>
           <input
@@ -218,7 +220,7 @@ const RegisterForm = () => {
 
         {/* Phone Number */}
         <div className="space-y-1 text-left">
-          <label className="block text-md font-semibold text-slate-800">
+          <label className="block font-semibold text-slate-800">
             Phone Number
           </label>
           <div className="flex gap-2 relative">
@@ -227,7 +229,7 @@ const RegisterForm = () => {
               <button
                 type="button"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center justify-between gap-1 px-3 py-2.5 h-full border border-slate-200 rounded-xl bg-slate-50 text-slate-700 text-md font-semibold hover:bg-slate-100 transition-all cursor-pointer select-none shrink-0"
+                className="flex items-center justify-between gap-1 px-3 py-2.5 h-full border border-slate-200 rounded-xl bg-slate-50 text-slate-700 font-semibold hover:bg-slate-100 transition-all cursor-pointer select-none shrink-0"
               >
                 <span>{dialCode}</span>
                 {/* Animated Arrow Icon */}
@@ -267,7 +269,7 @@ const RegisterForm = () => {
                           setDialCode(code);
                           setIsDropdownOpen(false);
                         }}
-                        className={`w-full text-left px-3.5 py-2 text-md font-medium transition-colors flex items-center justify-between ${
+                        className={`w-full text-left px-3.5 py-2 font-medium transition-colors flex items-center justify-between ${
                           dialCode === code
                             ? "bg-emerald-50 text-emerald-600 font-bold"
                             : "text-slate-700 hover:bg-slate-50"
@@ -292,7 +294,7 @@ const RegisterForm = () => {
               value={formik.values.phone}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className={`w-full px-3.5 py-2.5 text-md border rounded-xl outline-none transition-all ${
+              className={`w-full px-3.5 py-2.5 border rounded-xl outline-none transition-all ${
                 formik.touched.phone && formik.errors.phone
                   ? "border-red-500 focus:ring-2 focus:ring-red-200"
                   : "border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"

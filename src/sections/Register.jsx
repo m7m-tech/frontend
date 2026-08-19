@@ -19,7 +19,7 @@ const Register = () => {
   return (
     <div className="h-screen w-full flex overflow-hidden">
       {/* Left hero side */}
-      <div className="h-full w-[50%] bg-gradient-to-tl from-primary from-20% to-emerald to-80% flex flex-col gap-7 p-10 items-center justify-center rounded-tr-3xl rounded-br-3xl">
+      <div className="h-full w-[50%] bg-gradient-to-tl from-primary from-20% to-emerald to-80% lg:flex flex-col gap-7 p-10 lg:items-center lg:justify-center rounded-tr-3xl rounded-br-3xl hidden lg:block">
         <div className="w-full flex items-center justify-center">
           <img src={logo} alt="logo" className="w-[256px] h-[201px]" />
         </div>
@@ -44,7 +44,7 @@ const Register = () => {
       </div>
 
       {/* Right hero side */}
-      <div className="w-[50%] h-full flex items-center justify-center p-8 bg-white overflow-y-auto">
+      <div className="w-full lg:w-[50%] h-full flex items-center justify-center p-8 bg-white overflow-y-auto">
         <RegisterForm />
       </div>
     </div>

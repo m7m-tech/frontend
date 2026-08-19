@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
+import logo from "../assets/logo.png";
 
 import {
   HiOutlineMail,
@@ -47,7 +48,8 @@ const LoginForm = () => {
   });
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-6">
+    <div className="w-full max-w-md mx-auto space-y-6 ">
+      <img src={logo} alt="" className="w-30 mx-auto mb-7 md:hidden " />
       {/* Header */}
       <div className="text-center space-y-2">
         <h2 className="text-3xl font-bold text-slate-900">
@@ -124,6 +126,7 @@ const LoginForm = () => {
           <a
               href="#forgot"
               className="text-sm font-medium text-emerald-600 hover:underline"
+              onClick={()=> navigate("/email-forgot-password")}
             >
               Forgot Password?
             </a>

@@ -11,6 +11,9 @@ import Login from "./sections/Login";
 import Register from "./sections/Register";
 import AccountUnderReview from "./sections/AccountUnderReview";
 import EmailVerification from "./sections/EmailVerification";
+import EmailForgotPassword from "./components/EmailForgotPassword";
+import PasswordEmailVerification from "./components/PasswordEmailVerification";
+import ResetPassword from "./components/ResetPassword";
 
 function ProtectedRoute({ children }) {
   const { user, isLoading, isEmailVerified } = useAuth();
@@ -76,6 +79,23 @@ function App() {
               </GuestRoute>
             }
           />
+          <Route
+            path="/email-forgot-password"
+            element={
+              <GuestRoute>
+                <EmailForgotPassword />
+              </GuestRoute>
+            }
+          />
+          <Route
+            path="/password-email-verification"
+            element={<PasswordEmailVerification />}
+          />
+          <Route
+            path="/passwordEmailVerfication"
+            element={<PasswordEmailVerification />}
+          />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route
             path="/register"
             element={
