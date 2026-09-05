@@ -23,7 +23,7 @@ const AccountUnderReview = () => {
   const { logout } = useAuth();
 
   // الحالات الممكنة: 'PENDING' | 'APPROVED' | 'REJECTED'
-  const [status, setStatus] = useState("REJECTED");
+  const [status, setStatus] = useState("PENDING");
   const [loading, setLoading] = useState(false);
   const [rejectionReason, setRejectionReason] = useState(
     "Incomplete fleet registration documents and invalid commercial registry number.",
@@ -33,15 +33,22 @@ const AccountUnderReview = () => {
 
   // فحص حالة الحساب من الـ API
   const checkStatus = useCallback(async () => {
+    const token = localStorage.getItem("token");
+
+    // 1. التوقف فوراً إذا لم يكن هناك توكن (المستخدم غير مسجل دخوله)
+    if (!token) return;
+
     setLoading(true);
     try {
       const response = await fetch("/api/user/status", {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
-      if (response.ok) {
+      // 2. التحقق من أن الرد سليم وأن نوعه JSON وليس HTML (مثل صفحات الخطأ 404/500)
+      const contentType = response.headers.get("content-type");
+      if (response.ok && contentType && contentType.includes("application/json")) {
         const data = await response.json();
         setStatus(data.status);
         if (data.rejectionReason) setRejectionReason(data.rejectionReason);
@@ -63,17 +70,13 @@ const AccountUnderReview = () => {
 
   useEffect(() => {
     checkStatus();
-    // const interval = setInterval(() => {
-    //   checkStatus();
-    // }, 10000);
-
-    // return () => clearInterval(interval);
   }, [checkStatus]);
 
   const handleSignOut = () => {
     logout();
     navigate("/login", { replace: true });
   };
+  
   const handleEditDetails = () => {
     logout();
     window.location.href = "/register";
@@ -123,25 +126,20 @@ const AccountUnderReview = () => {
             }`}
           />
 
-          {/* ======================================= */}
-          {/* 1. حالة الرفض REJECTED VIEW            */}
-          {/* ======================================= */}
+          {/* 1. حالة الرفض REJECTED VIEW */}
           {status === "REJECTED" && (
             <div>
               <div className="p-8 space-y-6">
-                {/* Red X Icon Header */}
                 <div className="flex justify-center">
                   <div className="w-12 h-12 rounded-full bg-red-500 text-white flex items-center justify-center shadow-md">
                     <HiOutlineXMark className="text-2xl stroke-[2.5]" />
                   </div>
                 </div>
 
-                {/* Status Pill */}
                 <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-red-100 text-red-600 text-[10px] font-bold tracking-wider uppercase">
                   <span>STATUS: REJECTED</span>
                 </div>
 
-                {/* Main Heading & Subtitle */}
                 <div className="space-y-2">
                   <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
                     Registration Application Rejected
@@ -152,7 +150,6 @@ const AccountUnderReview = () => {
                   </p>
                 </div>
 
-                {/* Rejection Reason Box */}
                 <div className="bg-red-50/70 border-l-4 border-red-500 rounded-r-xl p-4 text-left space-y-1">
                   <div className="flex items-center space-x-2 text-red-700 font-bold text-xs">
                     <HiOutlineExclamationCircle className="text-sm shrink-0" />
@@ -163,7 +160,6 @@ const AccountUnderReview = () => {
                   </p>
                 </div>
 
-                {/* Details Grid */}
                 <div className="grid grid-cols-2 gap-4 text-left">
                   <div className="border border-slate-200 rounded-xl p-3 bg-white">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
@@ -183,7 +179,6 @@ const AccountUnderReview = () => {
                   </div>
                 </div>
 
-                {/* Action Buttons */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                   <button
                     onClick={() => console.log("Contact support")}
@@ -203,7 +198,6 @@ const AccountUnderReview = () => {
                 </div>
               </div>
 
-              {/* Rejected Footer Info */}
               <div className="bg-slate-50/80 border-t border-slate-100 py-3 text-center">
                 <p className="text-[11px] text-slate-500">
                   Need help? Read our{" "}
@@ -226,13 +220,10 @@ const AccountUnderReview = () => {
             </div>
           )}
 
-          {/* ======================================= */}
           {/* 2. حالة الانتظار والقبول PENDING / APPROVED */}
-          {/* ======================================= */}
           {status !== "REJECTED" && (
             <div>
               <div className="p-8 space-y-6">
-                {/* Status Pill */}
                 {status === "APPROVED" ? (
                   <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
                     <HiOutlineCheckCircle className="text-sm text-emerald-600" />
@@ -245,7 +236,6 @@ const AccountUnderReview = () => {
                   </div>
                 )}
 
-                {/* Heading & Subtext */}
                 <div className="space-y-2">
                   <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
                     {status === "APPROVED"
@@ -259,27 +249,18 @@ const AccountUnderReview = () => {
                   </p>
                 </div>
 
-                {/* Stepper Progress */}
                 <div className="py-2">
                   <div className="relative flex items-center justify-between max-w-sm mx-auto">
-                    <div className="absolute top-4 left-6 right-6 h-0.5 bg-slate-200 -z-0">
+                    <div className="absolute top-4 left-6 right-6 h-0.5 bg-slate-200 z-0">
                       <div
                         className={`h-full transition-all duration-500 ${
                           status === "APPROVED"
                             ? "bg-emerald-500 w-full"
-                            : "bg-slate-900 w-full  "
+                            : "bg-slate-900 w-full"
                         }`}
                       ></div>
-                      {/* <div
-                        className={`h-full transition-all duration-500 ${
-                          status === "APPROVED"
-                            ? "bg-emerald-500 w-full"
-                            : "bg-slate-900 w-1/2"
-                        }`}
-                      ></div> */}
                     </div>
 
-                    {/* Step 1 */}
                     <div className="relative z-10 flex flex-col items-center">
                       <div
                         className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md ${
@@ -295,7 +276,6 @@ const AccountUnderReview = () => {
                       </span>
                     </div>
 
-                    {/* Step 2 */}
                     <div className="relative z-10 flex flex-col items-center">
                       <div
                         className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md ${
@@ -311,7 +291,6 @@ const AccountUnderReview = () => {
                       </span>
                     </div>
 
-                    {/* Step 3 */}
                     <div className="relative z-10 flex flex-col items-center">
                       <div
                         className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
@@ -335,7 +314,6 @@ const AccountUnderReview = () => {
                   </div>
                 </div>
 
-                {/* Refresh & Home Button */}
                 <div>
                   {status === "PENDING" && (
                     <button
@@ -352,8 +330,8 @@ const AccountUnderReview = () => {
 
                   {status === "APPROVED" && (
                     <button
-                      onClick={() => navigate("/dashboard")} // أو "/home" حسب المسار المعتمد عندك
-                      className="inline-flex items-center space-x-2 px-6 py-2.5 bg-gradient-to-l from-[#4edea3] via-[#009668] to-[#007d56] bg-[length:200%_100%] bg-right hover:bg-left text-white rounded-xl text-xs font-bold transition-all duration-500 shadow-md active:scale-95"
+                      onClick={() => navigate("/dashboard")}
+                      className="inline-flex items-center space-x-2 px-6 py-2.5 bg-linear-to-l from-[#4edea3] via-[#009668] to-[#007d56] bg-size-[200%_100%] bg-right hover:bg-left text-white rounded-xl text-xs font-bold transition-all duration-500 shadow-md active:scale-95"
                     >
                       <HiOutlineArrowRightOnRectangle className="text-lg" />
                       <span>Go to Control Center</span>
@@ -361,7 +339,6 @@ const AccountUnderReview = () => {
                   )}
                 </div>
 
-                {/* Need Help Box */}
                 <div className="bg-slate-50/80 border border-slate-200/60 rounded-xl p-4 text-left space-y-3">
                   <h3 className="text-xs font-bold text-slate-800">
                     Need help?

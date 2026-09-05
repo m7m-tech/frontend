@@ -6,9 +6,23 @@
   --color-teal: #059669;
   --color-emerald: #10b981;
 
-   --color-pending: #f59e0b;
+  --color-pending: #f59e0b;
   --color-success: #10b981;
   --color-rejected: #ef4444;
   --color-blocked: #991b1b;
+}
 
+@keyframes check-pop {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.5;
+  }
+  70% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }

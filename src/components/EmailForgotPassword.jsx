@@ -23,7 +23,8 @@ const EmailForgotPassword = () => {
     onSubmit: async (values, { setSubmitting, setStatus }) => {
       setStatus("");
       try {
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+        const baseUrl =
+          import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
         const response = await fetch(`${baseUrl}/auth/forgot-password`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -107,7 +108,9 @@ const EmailForgotPassword = () => {
 
           <form onSubmit={formik.handleSubmit} className="space-y-4 pt-2">
             {formik.status && (
-              <p className="text-red-500 text-xs text-left font-medium">{formik.status}</p>
+              <p className="text-red-500 text-xs text-left font-medium">
+                {formik.status}
+              </p>
             )}
             <div className="text-left">
               <input
@@ -133,7 +136,7 @@ const EmailForgotPassword = () => {
             <button
               type="submit"
               disabled={formik.isSubmitting}
-              className="w-full bg-gradient-to-l from-[#4edea3] via-[#009668] to-[#007d56] bg-[length:200%_100%] bg-right hover:bg-left text-white font-medium p-3.5 rounded-xl transition-all duration-500 ease-in-out shadow-md hover:shadow-lg active:scale-[0.99] text-lg flex justify-center items-center gap-1 cursor-pointer disabled:opacity-50"
+              className="w-full bg-linear-to-l from-[#4edea3] via-[#009668] to-[#007d56] bg-size-[200%_100%] bg-right hover:bg-left text-white font-medium p-3.5 rounded-xl transition-all duration-500 ease-in-out shadow-md hover:shadow-lg active:scale-[0.99] text-lg flex justify-center items-center gap-1 cursor-pointer disabled:opacity-50"
             >
               {formik.isSubmitting ? "Submitting..." : "Submit"}
             </button>

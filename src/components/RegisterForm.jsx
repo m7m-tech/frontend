@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { HiOutlineEye, HiOutlineEyeOff } from "react-icons/hi";
 import { useAuth } from "../context/AuthContext";
 import logo from "../assets/logo.png";
@@ -27,61 +27,34 @@ const registerSchema = Yup.object({
 
 const RegisterForm = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [apiError, setApiError] = useState(""); // 👈 إضافه حالة الأخطاء
-
-  const [dialCode, setDialCode] = useState(() => {
-    try {
-      const savedDraft = localStorage.getItem("smartroute-register-draft");
-      if (savedDraft) {
-        const parsedDraft = JSON.parse(savedDraft);
-        return parsedDraft.dialCode || "+970";
-      }
-    } catch (error) {
-      console.error("Failed to restore dial code:", error);
-    }
-    return "+970";
-  });
-
+  const [apiError, setApiError] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
   const navigate = useNavigate();
+  const location = useLocation();
   const { register } = useAuth();
 
+  // استرجاع البيانات سابقة التعبئة إن وجدت من التوجيه
+  const passedState = location.state?.formData || {};
+
+  const [dialCode, setDialCode] = useState(passedState.dialCode || "+970");
+
   const initialValues = {
-    fullName: "",
-    companyName: "",
-    email: "",
-    phone: "",
+    fullName: passedState.fullName || "",
+    companyName: passedState.companyName || "",
+    email: passedState.email || "",
+    phone: passedState.phone || "",
     password: "",
     confirmPassword: "",
     agreeToTerms: false,
   };
 
-  const getSavedDraft = () => {
-    try {
-      const savedDraft = localStorage.getItem("smartroute-register-draft");
-      if (savedDraft) {
-        const parsedDraft = JSON.parse(savedDraft);
-        return {
-          ...initialValues,
-          ...parsedDraft,
-          password: "",
-          confirmPassword: "",
-          phone: parsedDraft.phone?.replace(/^\+\d{2,3}/, "") || "",
-        };
-      }
-    } catch (error) {
-      console.error("Failed to restore register draft:", error);
-    }
-    return initialValues;
-  };
-
-const formik = useFormik({
-    initialValues: getSavedDraft(),
+  const formik = useFormik({
+    initialValues,
     validationSchema: registerSchema,
     onSubmit: async (values, { setSubmitting }) => {
       setApiError("");
 
-      // تنظيف المدخلات وتوحيد تنسيق البريد
       const cleanEmail = values.email.trim().toLowerCase();
       const fullPhoneNumber = `${dialCode}${values.phone.trim()}`;
 
@@ -99,24 +72,17 @@ const formik = useFormik({
         const result = await register(payload);
 
         if (result.success) {
-          const draftPayload = {
-            ...values,
-            email: cleanEmail,
-            phone: fullPhoneNumber,
-            dialCode,
-            password: "",
-            confirmPassword: "",
-          };
-
-          localStorage.setItem(
-            "smartroute-register-draft",
-            JSON.stringify(draftPayload)
-          );
-
-          // 👈 تم إضافة state لتمرير الإيميل لصفحة التفعيل لمنع إعادة التوجيه لـ /login
-          navigate("/verification", { state: { email: cleanEmail } });
+          // تمرير البريد والبيانات الحالية لصفحة التفعيل
+          navigate("/verification", {
+            state: {
+              email: cleanEmail,
+              formData: { ...values, dialCode },
+            },
+          });
         } else {
-          setApiError(result.message || "Registration failed");
+          setApiError(
+            result.message || "Registration failed. Please try again."
+          );
         }
       } catch (error) {
         setApiError("An unexpected error occurred. Please try again.");
@@ -126,25 +92,10 @@ const formik = useFormik({
     },
   });
 
-  useEffect(() => {
-    const draftPayload = {
-      ...formik.values,
-      phone: `${dialCode}${formik.values.phone}`,
-      dialCode,
-      password: "",
-      confirmPassword: "",
-    };
-    localStorage.setItem(
-      "smartroute-register-draft",
-      JSON.stringify(draftPayload)
-    );
-  }, [formik.values, dialCode]);
-
   return (
     <div className="w-full max-w-lg mx-auto space-y-5">
-      <img src={logo} alt="" className="w-30 mx-auto mb-7 md:w-35 lg:hidden " />
-      
-      {/* Header */}
+      <img src={logo} alt="" className="w-30 mx-auto mb-7 md:w-35 lg:hidden" />
+
       <div className="text-center space-y-1">
         <h2 className="text-2xl md:text-5xl lg:text-3xl font-bold text-slate-900">
           Register Fleet Owner
@@ -154,16 +105,13 @@ const formik = useFormik({
         </p>
       </div>
 
-      {/* 👈 إظهار تنبيه الأخطاء القادمة من الـ API */}
       {apiError && (
         <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl text-center">
           {apiError}
         </div>
       )}
 
-      {/* Form */}
       <form onSubmit={formik.handleSubmit} className="w-full space-y-3.5">
-        {/* Full Name & Company Name */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1 text-left">
             <label className="block font-semibold text-slate-800">
@@ -214,7 +162,6 @@ const formik = useFormik({
           </div>
         </div>
 
-        {/* Business Email */}
         <div className="space-y-1 text-left">
           <label className="block font-semibold text-slate-800">
             Business Email
@@ -239,7 +186,6 @@ const formik = useFormik({
           )}
         </div>
 
-        {/* Phone Number */}
         <div className="space-y-1 text-left">
           <label className="block font-semibold text-slate-800">
             Phone Number
@@ -323,7 +269,6 @@ const formik = useFormik({
           )}
         </div>
 
-        {/* Password & Confirm Password */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1 text-left">
             <label className="block text-md font-semibold text-slate-800">
@@ -388,7 +333,6 @@ const formik = useFormik({
           </div>
         </div>
 
-        {/* Terms Checkbox */}
         <div className="space-y-1">
           <div className="flex items-center space-x-2 pt-1">
             <input
@@ -427,17 +371,17 @@ const formik = useFormik({
           )}
         </div>
 
-        {/* Submit Button */}
         <button
           type="submit"
           disabled={formik.isSubmitting}
-          className="w-full bg-gradient-to-l from-[#4edea3] via-[#009668] to-[#007d56] bg-[length:200%_100%] bg-right hover:bg-left text-white font-medium p-3.5 rounded-xl transition-all duration-500 ease-in-out shadow-md hover:shadow-lg active:scale-[0.99] text-sm disabled:opacity-50"
+          className="w-full bg-gradient-to-l from-[#4edea3] via-[#009668] to-[#007d56] bg-[length:200%_100%] bg-right hover:bg-left text-white font-medium p-3.5 rounded-xl transition-all duration-500 ease-in-out shadow-md hover:shadow-lg active:scale-[0.99] text-sm disabled:opacity-50 cursor-pointer"
         >
-          {formik.isSubmitting ? "Creating Account..." : "Create Fleet Owner Account"}
+          {formik.isSubmitting
+            ? "Creating Account..."
+            : "Create Fleet Owner Account"}
         </button>
       </form>
 
-      {/* Sign In Link */}
       <p className="text-center text-xs text-slate-500 pt-1">
         Already have an account?{" "}
         <Link

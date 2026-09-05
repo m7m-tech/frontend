@@ -9,11 +9,31 @@ import {
   HiOutlineEye,
   HiOutlineEyeOff,
 } from "react-icons/hi";
-import { FcGoogle } from "react-icons/fc";
 import { FaArrowRight } from "react-icons/fa6";
 
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+
+import { GoogleLogin } from "@react-oauth/google";
+
+// دالة محليّة لفك تشفير توكن Google لتجنب مشاكل استيراد jwt-decode مع Vite
+const decodeJwt = (token) => {
+  try {
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      window
+        .atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    console.error("Failed to decode Google Token:", e);
+    return null;
+  }
+};
 
 const loginSchema = Yup.object({
   email: Yup.string()
@@ -28,9 +48,11 @@ const loginSchema = Yup.object({
 const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [apiError, setApiError] = useState("");
-  const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, googleLogin } = useAuth();
 
+  const navigate = useNavigate();
+
+  // Formik للتسجيل العادي (Email & Password)
   const formik = useFormik({
     initialValues: {
       email: "",
@@ -42,6 +64,7 @@ const LoginForm = () => {
       setApiError("");
       try {
         const result = await login(values.email, values.password);
+
         if (result.success) {
           navigate("/account-under-review");
         } else {
@@ -55,10 +78,59 @@ const LoginForm = () => {
     },
   });
 
+  // المعالج الخاص بالتسجيل عبر Google
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setApiError("");
+    try {
+      // 1. فك تشفير توكن جوجل للحصول على بيانات المستخدم العامة
+      const decoded = decodeJwt(credentialResponse.credential);
+      // console.log("Decoded Google Profile:", decoded);
+
+      if (!decoded) {
+        setApiError("Could not extract user details from Google.");
+        return;
+      }
+
+      // 2. تجهيز هيكل البيانات الخاص بالبروفايل
+      const userProfileData = {
+        name: decoded.name,
+        email: decoded.email,
+        avatar: decoded.picture,
+        googleId: decoded.sub,
+        emailVerified: decoded.email_verified,
+      };
+
+      // 3. إرسال التوكن للباك إند للتحقق من وجود الحساب
+      const result = await googleLogin(
+        credentialResponse.credential,
+        "WEB"
+      );
+
+      // console.log("Backend Google Auth Response:", result);
+
+      if (result && result.success) {
+        // 4. حفظ بيانات البروفايل محلياً للوصول إليها لاحقاً
+        localStorage.setItem(
+          "userProfile",
+          JSON.stringify(userProfileData)
+        );
+
+        navigate("/account-under-review");
+      } else {
+        setApiError(
+          result?.message || "Email not recognized or server error."
+        );
+      }
+    } catch (error) {
+      console.error("Google Authentication Error Details:", error);
+      setApiError("Failed to process Google authentication.");
+    }
+  };
+
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
-      <img src={logo} alt="" className="w-30 mx-auto mb-7 md:hidden" />
-      
+      <img src={logo} alt="Logo" className="w-30 mx-auto mb-7 lg:hidden" />
+
       {/* Header */}
       <div className="text-center space-y-2">
         <h2 className="text-3xl font-bold text-slate-900">
@@ -76,7 +148,7 @@ const LoginForm = () => {
         </div>
       )}
 
-      {/* Form */}
+      {/* Form العادي */}
       <form onSubmit={formik.handleSubmit} className="w-full space-y-4">
         {/* Email Field */}
         <div className="space-y-1 text-left w-full">
@@ -138,6 +210,11 @@ const LoginForm = () => {
               )}
             </button>
           </div>
+          {formik.touched.password && formik.errors.password && (
+            <p className="text-red-500 text-xs mt-1">
+              {formik.errors.password}
+            </p>
+          )}
           <a
             href="#forgot"
             className="text-sm font-medium text-emerald-600 hover:underline"
@@ -148,36 +225,13 @@ const LoginForm = () => {
           >
             Forgot Password?
           </a>
-          {formik.touched.password && formik.errors.password && (
-            <p className="text-red-500 text-xs mt-1">
-              {formik.errors.password}
-            </p>
-          )}
-        </div>
-
-        {/* Remember Me Checkbox */}
-        <div className="flex items-center space-x-2 pt-1">
-          <input
-            type="checkbox"
-            id="rememberMe"
-            name="rememberMe"
-            checked={formik.values.rememberMe}
-            onChange={formik.handleChange}
-            className="w-4 h-4 accent-emerald-500 cursor-pointer rounded transition-all"
-          />
-          <label
-            htmlFor="rememberMe"
-            className="text-sm text-slate-600 cursor-pointer select-none"
-          >
-            Remember Me for 30 days
-          </label>
         </div>
 
         {/* Submit Button */}
         <button
           type="submit"
           disabled={formik.isSubmitting}
-          className="w-full bg-gradient-to-l from-[#4edea3] via-[#009668] to-[#007d56] bg-[length:200%_100%] bg-right hover:bg-left text-white font-medium p-3.5 rounded-xl transition-all duration-500 ease-in-out shadow-md hover:shadow-lg active:scale-[0.99] text-lg flex justify-center items-center gap-1 disabled:opacity-50"
+          className="w-full bg-linear-to-l from-[#4edea3] via-[#009668] to-[#007d56] bg-size-[200%_100%] bg-right hover:bg-left text-white font-medium p-3.5 rounded-xl transition-all duration-500 ease-in-out shadow-md hover:shadow-lg active:scale-[0.99] text-lg flex justify-center items-center gap-1 disabled:opacity-50 cursor-pointer"
         >
           <span>{formik.isSubmitting ? "Signing in..." : "Sign In"}</span>
           {!formik.isSubmitting && <FaArrowRight className="text-sm" />}
@@ -192,14 +246,19 @@ const LoginForm = () => {
         </span>
       </div>
 
-      {/* Social Login */}
-      <button
-        type="button"
-        className="w-full border border-slate-200 hover:bg-slate-100 text-slate-700 font-medium py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer"
-      >
-        <FcGoogle className="text-xl" />
-        <span>Continue with Google</span>
-      </button>
+      {/* Google Sign-In Button */}
+      <div className="w-full flex justify-center">
+        <GoogleLogin
+          onSuccess={handleGoogleSuccess}
+          onError={() => {
+            setApiError("Google Sign-In failed. Please try again.");
+          }}
+          useOneTap
+          theme="outline"
+          shape="circle"
+          width="large"
+        />
+      </div>
 
       {/* Register Link */}
       <p className="text-center text-sm text-slate-500 pt-2">

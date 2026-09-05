@@ -19,9 +19,9 @@ const Login = () => {
   return (
     <div className="h-screen w-full flex overflow-hidden">
       {/* Left hero side */}
-      <div className="h-full w-[50%] bg-gradient-to-tl from-primary from-20% to-emerald to-80% md:flex flex-col gap-7 p-10 md:items-center md:justify-center rounded-tr-3xl rounded-br-3xl hidden md:block">
+      <div className="hidden md:flex h-full w-[50%] bg-linear-to-tl from-primary from-20% to-emerald to-80% flex-col gap-7 p-10 md:items-center md:justify-center rounded-tr-3xl rounded-br-3xl">
         <div className="w-full flex items-center justify-center">
-          <img src={logo} alt="logo" className="w-[256px] h-[201px]" />
+          <img src={logo} alt="logo" className="w-[256px] h-50.25" />
         </div>
         <div className="flex flex-col">
           <h1 className="font-bold text-white text-center text-3xl px-10">

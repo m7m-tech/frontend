@@ -17,32 +17,28 @@ const EmailVerification = () => {
   const location = useLocation();
   const { logout, verifyEmail } = useAuth();
 
-  // OTP State (6 digits)
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const inputRefs = useRef([]);
 
-  // API & State Handling
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState("");
 
-  // قراءة البريد من location.state أولاً، ثم من localStorage كخيار احتياطي
   const draftData = JSON.parse(
-    localStorage.getItem("smartroute-register-draft") || "{}"
+    localStorage.getItem("smartroute-register-draft") || "{}",
   );
-  const userEmail = location.state?.email || draftData.email || "";
 
-  // Countdown & Toast State
+  const userEmail = location.state?.email || draftData.email || "";
+  const formData = location.state?.formData || null;
+
   const [timer, setTimer] = useState(58);
   const [showToast, setShowToast] = useState(false);
 
-  // Re-direct to register if no email found
   useEffect(() => {
     if (!userEmail) {
       navigate("/register", { replace: true });
     }
   }, [userEmail, navigate]);
 
-  // Countdown timer logic
   useEffect(() => {
     if (timer <= 0) return;
 
@@ -53,7 +49,6 @@ const EmailVerification = () => {
     return () => clearInterval(countdown);
   }, [timer]);
 
-  // Handle manual resend click
   const handleResendCode = async () => {
     if (timer > 0 || !userEmail) return;
 
@@ -79,9 +74,7 @@ const EmailVerification = () => {
   const handleChange = (value, index) => {
     const cleanedValue = value.replace(/\D/g, "").slice(-1);
 
-    if (!cleanedValue && value !== "") {
-      return;
-    }
+    if (!cleanedValue && value !== "") return;
 
     const newOtp = [...otp];
     newOtp[index] = cleanedValue;
@@ -124,7 +117,6 @@ const EmailVerification = () => {
     });
 
     setOtp(newOtp);
-
     const nextIndex = Math.min(pastedData.length, 5);
     inputRefs.current[nextIndex]?.focus();
   };
@@ -135,12 +127,11 @@ const EmailVerification = () => {
   };
 
   const handleEditEmail = () => {
-    navigate("/register");
+    navigate("/register", { state: { formData } });
   };
 
   const isCodeComplete = otp.every((digit) => digit !== "");
 
-  // 🚀 التعديل الجوهري هنا: حفظ resetToken عند نجاح الاستجابة
   const handleVerify = async (e) => {
     if (e) e.preventDefault();
 
@@ -154,7 +145,6 @@ const EmailVerification = () => {
       const result = await verifyEmail(userEmail, code);
 
       if (result.success) {
-        // 🔑 استخراج التوكن وتخزينه في localStorage
         const token =
           result.resetToken || result.token || result.data?.resetToken;
 
@@ -162,7 +152,6 @@ const EmailVerification = () => {
           localStorage.setItem("resetToken", token);
         }
 
-        // حفظ الإيميل لاستخدامه في المراحل القادمة إن لزم الأمر
         if (userEmail) {
           localStorage.setItem("userEmail", userEmail);
         }
@@ -170,7 +159,7 @@ const EmailVerification = () => {
         navigate("/account-under-review", { replace: true });
       } else {
         setApiError(
-          result.message || "Invalid verification code. Please try again."
+          result.message || "Invalid verification code. Please try again.",
         );
       }
     } catch (err) {
@@ -182,7 +171,6 @@ const EmailVerification = () => {
 
   return (
     <div className="relative min-h-screen flex flex-col justify-between bg-slate-100/70 text-slate-800 font-sans">
-      {/* Toast Notification */}
       {showToast && (
         <div className="fixed top-5 right-5 z-50 flex items-center gap-3 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-slate-700 transition-all duration-300 animate-bounce-short">
           <HiOutlineCheckCircle className="text-emerald-400 text-xl shrink-0" />
@@ -195,7 +183,6 @@ const EmailVerification = () => {
         </div>
       )}
 
-      {/* Header */}
       <header className="w-full bg-white border-b border-slate-200/80 px-8 py-3.5 flex items-center justify-between shadow-xs">
         <div className="flex items-center justify-center space-x-1">
           <div className="w-8 h-8">
@@ -215,7 +202,6 @@ const EmailVerification = () => {
         </button>
       </header>
 
-      {/* Main Container */}
       <main className="flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-xl rounded-2xl bg-white p-10 text-center shadow-sm border border-slate-100">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-emerald-600">
@@ -233,16 +219,15 @@ const EmailVerification = () => {
             .
           </p>
 
-          {/* Stepper Progress */}
           <div className="my-8 max-w-md mx-auto">
             <div className="relative flex items-center justify-between">
-              <div className="absolute top-4 left-8 right-8 h-[2px] bg-slate-200 -z-0">
+              <div className="absolute top-4 left-8 right-8 h-0.5 bg-slate-200 z-0">
                 <div className="h-full bg-slate-900 w-1/2 transition-all duration-300"></div>
               </div>
 
               <div className="relative z-10 flex flex-col items-center">
                 <div className="w-9 h-9 rounded-full flex items-center justify-center bg-black text-white shadow-xs">
-                  <HiOutlineCheck className="text-lg stroke-[3]" />
+                  <HiOutlineCheck className="text-lg stroke-3" />
                 </div>
                 <span className="text-xs font-bold text-slate-900 mt-1.5">
                   Submitted
@@ -269,14 +254,12 @@ const EmailVerification = () => {
             </div>
           </div>
 
-          {/* Error Alert Box */}
           {apiError && (
             <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs font-medium">
               {apiError}
             </div>
           )}
 
-          {/* OTP Input Fields */}
           <form onSubmit={handleVerify}>
             <div className="flex justify-center items-center gap-2.5 my-6">
               {otp.map((digit, index) => (
@@ -296,7 +279,6 @@ const EmailVerification = () => {
               ))}
             </div>
 
-            {/* Dynamic Resend Section */}
             <div className="my-4 h-6 flex items-center justify-center">
               {timer > 0 ? (
                 <p className="text-[11px] text-slate-400 font-medium">
@@ -313,13 +295,12 @@ const EmailVerification = () => {
               )}
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={!isCodeComplete || isSubmitting}
               className={`w-full font-medium p-3.5 rounded-xl transition-all duration-500 ease-in-out text-sm flex items-center justify-center gap-2 ${
                 isCodeComplete && !isSubmitting
-                  ? "bg-gradient-to-l from-[#4edea3] via-[#009668] to-[#007d56] bg-[length:200%_100%] bg-right hover:bg-left text-white shadow-md hover:shadow-lg active:scale-[0.99] cursor-pointer"
+                  ? "bg-linear-to-l from-[#4edea3] via-[#009668] to-[#007d56] bg-size-[200%_100%] bg-right hover:bg-left text-white shadow-md hover:shadow-lg active:scale-[0.99] cursor-pointer"
                   : "bg-slate-200 text-slate-500 cursor-not-allowed"
               }`}
             >
@@ -330,7 +311,6 @@ const EmailVerification = () => {
             </button>
           </form>
 
-          {/* Footer Text */}
           <div className="mt-8 pt-2 text-[11px] text-slate-500 leading-normal">
             <p>
               Didn't receive the email? Check your spam folder or try again
@@ -347,7 +327,6 @@ const EmailVerification = () => {
         </div>
       </main>
 
-      {/* Page Footer */}
       <footer className="w-full py-4 px-8 flex flex-col md:flex-row items-center justify-between text-[11px] text-slate-400 gap-2 border-t border-slate-200/50 bg-white/50">
         <p>© 2024 SmartRoute Logistics. All rights reserved.</p>
         <div className="flex items-center gap-6">
