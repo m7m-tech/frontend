@@ -1,10 +1,8 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "../assets/logo.png";
-import { FaGaugeSimpleHigh } from "react-icons/fa6";
-import { GiCheckedShield } from "react-icons/gi";
 import RegisterForm from "../components/RegisterForm";
 import { useAuth } from "../context/AuthContext";
+import signupImg from "../assets/signupImg.png";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -17,35 +15,39 @@ const Register = () => {
   }, [isAuthenticated, isLoading, navigate]);
 
   return (
-    <div className="h-screen w-full flex overflow-hidden">
-      {/* Left hero side */}
-      <div className="h-full w-[50%] hidden lg:flex bg-linear-to-tl from-primary from-20% to-emerald to-80% flex-col gap-7 p-10 lg:items-center lg:justify-center rounded-tr-3xl rounded-br-3xl">
-        <div className="w-full flex items-center justify-center">
-          <img src={logo} alt="logo" className="w-[256px] h-50.25" />
-        </div>
-        <div className="flex flex-col">
-          <h1 className="font-bold text-white text-center text-3xl px-10">
-            Mastering Logistics through Intelligence.
-          </h1>
-          <p className="text-white/90 text-center font-extralight mt-7 px-8">
-            Experience the next generation of fleet management with real-time
-            routing, predictive analytics, and enterprise-grade security.
-          </p>
-          <div className="flex gap-4 justify-center items-center mt-6">
-            <button className="flex items-center justify-center gap-1 text-white border border-white/10 p-2 bg-white/10 rounded-xl backdrop-blur-md hover:bg-white/20 transition-all duration-200">
-              <FaGaugeSimpleHigh className="text-emerald w-4 h-5" /> Fast Setup
-            </button>
-            <button className="flex items-center justify-center gap-1 text-white border border-white/10 p-2 bg-white/10 rounded-xl backdrop-blur-md hover:bg-white/20 transition-all duration-200">
-              <GiCheckedShield className="text-emerald w-4 h-5" /> Enterprise
-              Grade
-            </button>
-          </div>
-        </div>
+    // No h-screen/overflow-hidden here: the page scrolls normally (single,
+    // native browser scrollbar) instead of a nested scroll container.
+    <div className="min-h-screen w-full flex">
+      {/* Left side - form, part of normal document flow */}
+      <div className="w-full lg:w-[40%] flex items-start justify-center px-6 md:px-10 py-10">
+        <RegisterForm />
       </div>
 
-      {/* Right hero side */}
-      <div className="w-full lg:w-[50%] h-full flex items-center justify-center p-8 bg-white overflow-y-auto">
-        <RegisterForm />
+      {/* Right side - pinned to the viewport while the left side scrolls,
+          so it always renders at the exact viewport size with no empty
+          space appearing below it. */}
+      <div className="hidden lg:block lg:w-[60%] relative">
+        <div className="sticky top-0 h-screen w-full rounded-2xl border-6 border-white overflow-hidden bg-linear-to-tl from-brand/20 to-secondary/40">
+          <img
+            src={signupImg}
+            alt="hero"
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute top-16 left-4">
+            <p className="text-[32px] text-left font-bold text-black z-30">
+              Plan smarter.
+              <br />
+              Deliver better.
+            </p>
+            <p className="text-[16px] text-black/80">
+              Smart routing.
+              <br />
+              Efficient deliveries.
+              <br />
+              Keep your business moving.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

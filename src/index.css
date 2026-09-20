@@ -1,17 +1,110 @@
 @import "tailwindcss";
 
+/* =========================
+   Theme Variables
+========================= */
 @theme {
-  --color-primary: #102a43;
-  --color-secondary: #1e3a8a;
-  --color-teal: #059669;
-  --color-emerald: #10b981;
 
-  --color-pending: #f59e0b;
-  --color-success: #10b981;
-  --color-rejected: #ef4444;
-  --color-blocked: #991b1b;
+  /* Brand */
+  --color-brand: #8FE600;
+  --color-secondary: #9BEF00;
+  --color-black: #222222;
+  --color-deep: #000000;
+  --color-bg: #FDFDFD;
+  --color-white: #FFFFFF;
+
+  /* Status */
+  --color-error: #FF3D00;
+
+  /* Gray */
+  --color-gray: #737373;
+  --color-border: #D0D0D0;
+  --color-muted: #D9D9D9;
+
+  /* Icons */
+  --color-saudi: #006C35;
+  --color-blue: #1976D2;
+  --color-green: #4CAF50;
+  --color-red: #FF3D00;
+  --color-yellow: #FFC107;
+  --color-soft: #F0FBD7;
+  --color-warning: #FDE8E8;
+
+  /* Fonts */
+  --font-monument: "Monument Extended", sans-serif;
+  --font-base: "Satoshi", sans-serif;
 }
 
+/* =========================
+   Satoshi Font (Local)
+========================= */
+@font-face {
+  font-family: 'Satoshi';
+  src: url('./assets/fonts/Satoshi-Light.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('./assets/fonts/Satoshi-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('./assets/fonts/Satoshi-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('./assets/fonts/Satoshi-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('./assets/fonts/Satoshi-Black.otf') format('opentype');
+  font-weight: 900;
+  font-style: normal;
+}
+
+/* =========================
+   Monument Font
+========================= */
+@font-face {
+  font-family: 'Monument Extended';
+  src: url('./assets/fonts/Monument Extended Regular 400.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Monument Extended';
+  src: url('./assets/fonts/Monument Extended Ultrabold 800.otf') format('opentype');
+  font-weight: 800;
+  font-style: normal;
+}
+
+/* =========================
+   Global Base
+========================= */
+body {
+  font-family: var(--font-base);
+  background-color: var(--color-bg);
+  color: var(--color-black);
+  margin: 0;
+  padding: 0;
+  box-sizing: 0;
+}
+
+/* =========================
+   Animations
+========================= */
 @keyframes check-pop {
   0% {
     transform: scale(0.7);

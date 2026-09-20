@@ -11,16 +11,19 @@ import {
   HiOutlineCheckCircle,
 } from "react-icons/hi2";
 import { useAuth } from "../context/AuthContext";
+import Notification from "../components/Notification";
 
 const EmailVerification = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { logout, verifyEmail } = useAuth();
+  // const { logout, verifyEmail, resendOtp } = useAuth();
+  const { verifyEmail, resendOtp } = useAuth();
 
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const inputRefs = useRef([]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [apiError, setApiError] = useState("");
 
   const draftData = JSON.parse(
@@ -30,8 +33,11 @@ const EmailVerification = () => {
   const userEmail = location.state?.email || draftData.email || "";
   const formData = location.state?.formData || null;
 
-  const [timer, setTimer] = useState(58);
+  const [timer, setTimer] = useState(5);
   const [showToast, setShowToast] = useState(false);
+  const [status, setStatus] = useState("success");
+  const [content, setContent] = useState();
+  const [details, setDetails] = useState();
 
   useEffect(() => {
     if (!userEmail) {
@@ -50,25 +56,29 @@ const EmailVerification = () => {
   }, [timer]);
 
   const handleResendCode = async () => {
-    if (timer > 0 || !userEmail) return;
+    if (timer > 0 || !userEmail || isResending) return;
 
     setApiError("");
-    try {
-      await fetch("http://localhost:3000/auth/resend-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: userEmail }),
-      });
+    setIsResending(true);
 
-      setTimer(59);
+    const result = await resendOtp(userEmail);
+
+    if (result.success) {
+      setTimer(5);
+      setStatus("success");
+      setContent("Verification code sent!");
+      setDetails("Check your inbox or spam folder.");
       setShowToast(true);
-
-      setTimeout(() => {
-        setShowToast(false);
-      }, 4000);
-    } catch (err) {
-      setApiError("Failed to resend code. Please try again.");
+    } else {
+      setApiError(result.message);
+      setStatus("failed");
+      setContent("Failed to send code.");
+      setDetails(result.message);
+      setShowToast(true);
     }
+
+    setIsResending(false);
+    setTimeout(() => setShowToast(false), 4000);
   };
 
   const handleChange = (value, index) => {
@@ -121,10 +131,10 @@ const EmailVerification = () => {
     inputRefs.current[nextIndex]?.focus();
   };
 
-  const handleSignOut = () => {
-    logout();
-    navigate("/login", { replace: true });
-  };
+  // const handleSignOut = () => {
+  //   logout();
+  //   navigate("/login", { replace: true });
+  // };
 
   const handleEditEmail = () => {
     navigate("/register", { state: { formData } });
@@ -172,15 +182,7 @@ const EmailVerification = () => {
   return (
     <div className="relative min-h-screen flex flex-col justify-between bg-slate-100/70 text-slate-800 font-sans">
       {showToast && (
-        <div className="fixed top-5 right-5 z-50 flex items-center gap-3 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-slate-700 transition-all duration-300 animate-bounce-short">
-          <HiOutlineCheckCircle className="text-emerald-400 text-xl shrink-0" />
-          <div className="text-xs">
-            <p className="font-bold text-white">Verification code sent!</p>
-            <p className="text-slate-300 text-[11px]">
-              Check your inbox or spam folder.
-            </p>
-          </div>
-        </div>
+        <Notification status={status} content={content} details={details} />
       )}
 
       <header className="w-full bg-white border-b border-slate-200/80 px-8 py-3.5 flex items-center justify-between shadow-xs">
@@ -193,13 +195,13 @@ const EmailVerification = () => {
           </span>
         </div>
 
-        <button
+        {/* <button
           onClick={handleSignOut}
           className="flex items-center space-x-1.5 px-3 py-1.5 border border-slate-200 rounded-md text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
         >
           <HiOutlineArrowRightOnRectangle className="text-sm" />
           <span>Sign Out</span>
-        </button>
+        </button> */}
       </header>
 
       <main className="flex-1 flex items-center justify-center px-4 py-8">
@@ -288,9 +290,10 @@ const EmailVerification = () => {
                 <button
                   type="button"
                   onClick={handleResendCode}
+                  disabled={isResending}
                   className="text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline transition-all cursor-pointer"
                 >
-                  Resend code
+                  {isResending ? "Sending..." : "Resend code"}
                 </button>
               )}
             </div>
