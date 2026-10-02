@@ -132,7 +132,7 @@ const LoginForm = () => {
           <span className="text-brand">back.</span>
         </h1>
         <p className="text-black text-sm leading-snug mb-4">
-          Sign in to manage routes, operations, and your bussiness performance.
+          Sign in to manage routes, operations, and your<br /> bussiness performance.
         </p>
       </div>
 
@@ -145,7 +145,7 @@ const LoginForm = () => {
       <form onSubmit={formik.handleSubmit} className="w-full space-y-4 pt-1">
         {/* Email */}
         <div className="space-y-1.5 text-left w-full">
-          <label className="block text-lg font-medium text-black">
+          <label className="block text-[14px] font-medium text-black">
             Email Address
           </label>
 
@@ -186,7 +186,7 @@ const LoginForm = () => {
 
         {/* Password */}
         <div className="space-y-1.5 text-left w-full">
-          <label className="block text-lg font-medium text-black">
+          <label className="block text-[14px] font-medium text-black">
             Password
           </label>
 
@@ -272,8 +272,9 @@ const LoginForm = () => {
           }}
           useOneTap={false}
           theme="outline"
-          shape="rectangular"
-          width="384"
+          shape="circle"
+          width="full"
+          
         />
       </div>
 
@@ -281,7 +282,7 @@ const LoginForm = () => {
         New Fleet Manager?{" "}
         <Link
           to="/register"
-          className="font-semibold text-black underline underline-offset-2"
+          className="font-semibold text-brand underline underline-offset-2"
         >
           Register your Company
         </Link>

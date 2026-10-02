@@ -1,409 +1,384 @@
 import React, { useState, useEffect, useCallback } from "react";
-import logo from "../assets/logo.png";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
-  HiOutlineClock,
   HiOutlineCheck,
-  HiOutlineEllipsisHorizontal,
-  HiOutlineLockClosed,
-  HiOutlineArrowRightOnRectangle,
-  HiOutlineEnvelope,
-  HiOutlinePhone,
-  HiOutlineArrowPath,
-  HiOutlineCheckCircle,
-  HiOutlineXMark,
-  HiOutlineExclamationCircle,
-  HiOutlinePencilSquare,
+  HiOutlineBookOpen,
+  HiOutlineArrowRight,
   HiOutlineChatBubbleLeftRight,
+  HiOutlineDocumentText,
+  HiOutlineMagnifyingGlass,
+  HiOutlineArrowRightOnRectangle,
 } from "react-icons/hi2";
+
+// Right-Side Hero Section Images
+import reviewHero from "../assets/account-under-review.png";
+import successHero from "../assets/success-hero.png";
+import rejectionHero from "../assets/smile-reject-hero.png";
+
+// Left-Side Status Center Illustrations
+import pendingImg from "../assets/pending.png";
+import acceptedImg from "../assets/accepted.png";
+import rejectionImg from "../assets/rejected.png";
+
+// Maps whatever the backend calls the status to our internal keys.
+// SUSPENDED has no dedicated screen — closest in severity to a rejection,
+// so it reuses that view until there's a distinct design for it.
+const STATUS_MAP = {
+  PENDING: "pending",
+  APPROVED: "accepted",
+  REJECTED: "rejected",
+  SUSPENDED: "rejected",
+};
+
+// Once the user has confirmed they're in (pressed "Go to Dashboard" on the
+// accepted screen), we never want to show this page again on future logins —
+// they should land straight on the dashboard instead.
+const ACTIVATED_FLAG_KEY = "smartroute-account-activated";
+
+const RouteXLogo = (props) => (
+  <svg
+    width="117"
+    height="19"
+    viewBox="0 0 117 19"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+    {...props}
+  >
+    <path
+      d="M19.632 7.60823C19.632 10.3442 18.24 12.3602 15.984 13.2482L19.08 18.2402H13.992L11.28 13.7522H4.32002V18.2402H1.76132e-05V1.44023H13.2C17.016 1.44023 19.632 3.86423 19.632 7.60823ZM4.32002 5.06423V10.1282H12C13.296 10.1282 15.312 10.1282 15.312 7.60823C15.312 5.06423 13.296 5.06423 12 5.06423H4.32002ZM30.5989 18.4802C24.7429 18.4802 20.8069 16.3682 20.8069 11.1842C20.8069 5.97623 24.7429 3.86423 30.5989 3.86423C36.4309 3.86423 40.3909 5.97623 40.3909 11.1842C40.3909 16.3682 36.4309 18.4802 30.5989 18.4802ZM30.5989 15.0482C34.3909 15.0482 36.2629 14.1122 36.2629 11.1842C36.2629 8.23223 34.3909 7.29623 30.5989 7.29623C26.7829 7.29623 24.9109 8.23223 24.9109 11.1842C24.9109 14.1122 26.7829 15.0482 30.5989 15.0482ZM57.5051 4.10423H61.6091V18.2402H57.5051V15.7682C55.4891 17.3522 52.7051 18.4802 49.2731 18.4802C45.5051 18.4802 41.9771 17.1362 41.9291 11.9282L41.9771 4.10423H46.1051V10.3682C46.1051 13.3682 47.1131 14.9282 50.4971 14.9282C53.2571 14.9282 56.2331 13.5122 57.5051 12.0242V4.10423ZM77.7259 7.53623H71.0299V11.6162C71.0299 14.3522 71.5579 15.0482 74.0539 15.0482C75.3499 15.0482 76.0699 15.0482 77.7259 14.8082V18.1202C76.3579 18.3602 74.7979 18.4802 72.9019 18.4802C69.2539 18.4802 66.9019 17.1122 66.9019 13.9922V7.53623H63.1819V4.10423H66.9019V1.17623L71.0299 0.000233173V4.10423H77.7259V7.53623ZM88.2964 15.1442C91.1284 15.1442 92.8564 14.6162 93.8884 13.1762H97.9684C97.0324 16.7762 93.5284 18.4802 88.2964 18.4802C82.9204 18.4802 78.7444 16.3682 78.7444 11.1842C78.7444 5.97623 82.8004 3.86423 88.5364 3.86423C93.9124 3.86423 98.2084 5.71223 98.2084 12.1442H82.9444C83.4004 14.4002 85.5604 15.1442 88.2964 15.1442ZM88.5124 6.98423C85.7044 6.98423 83.7364 7.53623 83.0884 9.52823H93.8164C93.1204 7.53623 91.1044 6.98423 88.5124 6.98423Z"
+      fill="#222222"
+    />
+    <path
+      d="M105.89 9.86133L99.2922 1.48242H103.218L107.847 7.59961L112.476 1.48242H116.402L109.816 9.86133L116.402 18.2402H112.476L107.847 12.123L103.218 18.2402H99.2922L105.89 9.86133Z"
+      fill="#8FE600"
+    />
+  </svg>
+);
+
+// Static copy + assets per state — keeps the JSX below purely structural.
+const STATUS_CONTENT = {
+  pending: {
+    titleLine1: "You're almost",
+    titleLine2: "there!",
+    illustration: pendingImg,
+    hero: reviewHero,
+  },
+  accepted: {
+    titleLine1: "You're all",
+    titleLine2: "set!",
+    illustration: acceptedImg,
+    hero: successHero,
+  },
+  rejected: {
+    titleLine1: "We couldn't",
+    titleLine2: "approve account",
+    illustration: rejectionImg,
+    hero: rejectionHero,
+  },
+};
 
 const AccountUnderReview = () => {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { checkCompanyStatus, logout } = useAuth();
 
-  // الحالات الممكنة: 'PENDING' | 'APPROVED' | 'REJECTED'
-  const [status, setStatus] = useState("PENDING");
-  const [loading, setLoading] = useState(false);
-  const [rejectionReason, setRejectionReason] = useState(
-    "Incomplete fleet registration documents and invalid commercial registry number.",
-  );
-  const [applicationId, setApplicationId] = useState("SR-99283-XQ");
-  const [reviewDate, setReviewDate] = useState("October 24, 2024");
-
-  // فحص حالة الحساب من الـ API
-  const checkStatus = useCallback(async () => {
-    const token = localStorage.getItem("token");
-
-    // 1. التوقف فوراً إذا لم يكن هناك توكن (المستخدم غير مسجل دخوله)
-    if (!token) return;
-
-    setLoading(true);
-    try {
-      const response = await fetch("/api/user/status", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      // 2. التحقق من أن الرد سليم وأن نوعه JSON وليس HTML (مثل صفحات الخطأ 404/500)
-      const contentType = response.headers.get("content-type");
-      if (response.ok && contentType && contentType.includes("application/json")) {
-        const data = await response.json();
-        setStatus(data.status);
-        if (data.rejectionReason) setRejectionReason(data.rejectionReason);
-        if (data.applicationId) setApplicationId(data.applicationId);
-        if (data.reviewDate) setReviewDate(data.reviewDate);
-
-        if (data.status === "APPROVED") {
-          setTimeout(() => {
-            navigate("/dashboard");
-          }, 2500);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to check status:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [navigate]);
-
-  useEffect(() => {
-    checkStatus();
-  }, [checkStatus]);
-
-  const handleSignOut = () => {
+  const handleLogout = () => {
     logout();
     navigate("/login", { replace: true });
   };
-  
-  const handleEditDetails = () => {
-    logout();
-    window.location.href = "/register";
+
+  // null while we're still deciding what to show (checking the activated
+  // flag, then waiting on the API) — nothing renders until this resolves,
+  // so there's no flash of "pending" before a redirect.
+  const [status, setStatus] = useState(null);
+  const [statusMessage, setStatusMessage] = useState("");
+  const [fetchError, setFetchError] = useState("");
+
+  const checkStatus = useCallback(
+    async (signal) => {
+      try {
+        const result = await checkCompanyStatus(signal);
+
+        if (!result.success) {
+          // Retain the default PENDING state on any 4xx/5xx — don't alter status.
+          setFetchError(result.message);
+          setStatus((current) => current || "pending");
+          return;
+        }
+
+        const mapped = STATUS_MAP[result.status] || "pending";
+
+        setFetchError("");
+        setStatusMessage(result.message || "");
+        setStatus(mapped);
+      } catch (error) {
+        if (error.name === "AbortError") return;
+        console.error("Failed to check status:", error);
+        setFetchError("Couldn't refresh your status right now. Please try again later.");
+        setStatus((current) => current || "pending");
+      }
+    },
+    [checkCompanyStatus]
+  );
+
+  useEffect(() => {
+    // Lifetime gate: if this user already confirmed their activation once,
+    // skip straight to the dashboard — this screen is never shown again.
+    const alreadyActivated = localStorage.getItem(ACTIVATED_FLAG_KEY) === "true";
+    if (alreadyActivated) {
+      navigate("/dashboard", { replace: true });
+      return;
+    }
+
+    // Aborts the in-flight request on unmount, so React StrictMode's
+    // dev-only mount/unmount/remount cycle can't land two overlapping calls.
+    const controller = new AbortController();
+    checkStatus(controller.signal);
+    return () => controller.abort();
+  }, [checkStatus, navigate]);
+
+  const handlePrimaryAction = () => {
+    if (status === "accepted") {
+      // Set once, for life — future logins skip this page entirely.
+      localStorage.setItem(ACTIVATED_FLAG_KEY, "true");
+      navigate("/dashboard");
+    } else if (status === "rejected") {
+      window.location.href = "mailto:support@smartroute.logistics";
+    }
   };
 
+  // Still resolving the flag/API check — render nothing rather than a
+  // flash of the wrong state.
+  if (!status) return null;
+
+  const content = STATUS_CONTENT[status];
+
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-slate-50 text-slate-800 font-sans">
-      {/* Header */}
-      <header className="w-full bg-white border-b border-slate-200/80 px-8 py-3.5 flex items-center justify-between shadow-xs">
-        <div className="flex items-center justify-center space-x-1">
-          <div className="w-8 h-8">
-            <img src={logo} alt="" />
+    <div className="h-dvh w-full flex overflow-hidden bg-bg font-base text-black">
+      {/* Left side - status panel */}
+      <div className="w-full lg:w-[40%] h-full flex items-center justify-center px-6 md:px-10 lg:px-14 py-[clamp(0.5rem,2.2vh,1.5rem)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <div className="w-full max-w-[400px] mx-auto flex flex-col gap-[clamp(1rem,2.4vh,1.5rem)]">
+          <div className="flex items-center justify-between">
+            <RouteXLogo />
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 text-xs font-medium text-gray hover:text-black transition-colors cursor-pointer"
+            >
+              <HiOutlineArrowRightOnRectangle className="text-sm" />
+              Log out
+            </button>
           </div>
-          <span className="text-2xl font-bold text-slate-900 tracking-tight">
-            SmartRoute
-          </span>
-        </div>
 
-        <button
-          onClick={handleSignOut}
-          className="flex items-center space-x-1.5 px-3 py-1.5 border border-slate-200 rounded-md text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
-        >
-          <HiOutlineArrowRightOnRectangle className="text-sm" />
-          <span>Sign Out</span>
-        </button>
-      </header>
+          {fetchError && (
+            <div className="p-2.5 rounded-lg bg-[color-mix(in_srgb,var(--color-error)_8%,white)] border border-[color-mix(in_srgb,var(--color-error)_25%,white)] text-[color:var(--color-error)] text-xs font-medium text-center">
+              {fetchError}
+            </div>
+          )}
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex items-center justify-center px-4 py-12">
-        <div
-          className={`w-full max-w-xl bg-white rounded-2xl shadow-lg border overflow-hidden text-center transition-all ${
-            status === "REJECTED"
-              ? "border-red-100"
-              : status === "APPROVED"
-                ? "border-emerald-100"
-                : "border-slate-100"
-          }`}
-        >
-          {/* Top Decorative Line */}
-          <div
-            className={`h-1.5 w-full ${
-              status === "REJECTED"
-                ? "bg-red-500"
-                : status === "APPROVED"
-                  ? "bg-emerald-500"
-                  : "bg-transparent"
-            }`}
-          />
+          {/* Heading + subtext */}
+          <div className="text-left space-y-2">
+            <h1 className="font-[family-name:var(--font-base)] text-[clamp(2.6rem,3.2vh,2.1rem)] leading-tight font-bold text-[color:var(--color-black)]">
+              {content.titleLine1}
+              <br />
+              <span className="text-[color:var(--color-brand)]">{content.titleLine2}</span>
+            </h1>
 
-          {/* 1. حالة الرفض REJECTED VIEW */}
-          {status === "REJECTED" && (
+            {status === "pending" && (
+              <p className="text-sm text-gray leading-relaxed text-justify">
+                {statusMessage ||
+                  "We've received your information and our team is reviewing your application. We'll notify you once your account is approved."}
+              </p>
+            )}
+            {status === "accepted" && (
+              <p className="text-sm text-gray leading-relaxed">
+                {statusMessage ||
+                  "Your account has been approved. You can now access the dashboard and start using RouteX"}
+              </p>
+            )}
+            {status === "rejected" && (
+              <p className="text-sm text-gray leading-relaxed">
+                {statusMessage ||
+                  "After reviewing your information, we're unable to approve your RouteX account at this time."}
+              </p>
+            )}
+          </div>
+
+          {/* Illustration — pre-composited per state */}
+          <div className="flex justify-center py-1">
+            <img
+              src={content.illustration}
+              alt=""
+              className="w-28 h-28 sm:w-32 sm:h-32 object-contain"
+            />
+          </div>
+
+          {/* Dynamic middle block */}
+          {status === "pending" && (
+            <div className="relative flex items-start justify-between">
+              <div className="absolute top-3 left-3 right-3 h-px bg-[color:var(--color-border)]" />
+              {[
+                { label: "Application submitted", state: "done" },
+                { label: "Verification in progress", state: "active" },
+                { label: "Account Activated", state: "upcoming" },
+              ].map((step) => (
+                <div
+                  key={step.label}
+                  className="relative z-10 flex flex-col items-center gap-1.5 flex-1 px-1"
+                >
+                  {step.state === "done" && (
+                    <div className="w-6 h-6 rounded-full bg-brand flex items-center justify-center shrink-0">
+                      <HiOutlineCheck className="text-xs text-black stroke-[3]" />
+                    </div>
+                  )}
+                  {step.state === "active" && (
+                    <div className="w-6 h-6 rounded-full border-2 border-brand bg-white flex items-center justify-center shrink-0">
+                      <div className="w-2 h-2 rounded-full bg-brand" />
+                    </div>
+                  )}
+                  {step.state === "upcoming" && (
+                    <div className="w-6 h-6 rounded-full border-2 border-[color:var(--color-border)] bg-white shrink-0" />
+                  )}
+                  <span
+                    className={`text-[13px] text-center leading-tight ${
+                      step.state === "upcoming" ? "text-gray/60" : "font-semibold text-black"
+                    }`}
+                  >
+                    {step.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {(status === "accepted" || status === "rejected") && (
+            <button
+              type="button"
+              onClick={handlePrimaryAction}
+              className="w-full font-semibold py-[clamp(0.75rem,1.7vh,0.95rem)] rounded-xl text-sm bg-brand hover:bg-secondary text-black shadow-sm hover:shadow-md active:scale-[0.99] transition-all duration-300 ease-in-out cursor-pointer"
+            >
+              {status === "accepted" ? "Go to Dashboard" : "Contact Support"}
+            </button>
+          )}
+
+          <div className="h-px w-full bg-[color:var(--color-border)]" />
+
+          {/* Dynamic bottom block */}
+          {status === "pending" && (
+            <div className="flex flex-col">
+              <p className="text-xs text-gray font-medium mb-1">In the meantime</p>
+
+              <button
+                type="button"
+                onClick={() => navigate("/about")}
+                className="flex items-center justify-between py-2.5 border-b border-[color:var(--color-border)] group cursor-pointer"
+              >
+                <span className="flex items-center gap-2.5">
+                  <span className="w-7 h-7 rounded-full bg-brand/15 flex items-center justify-center text-black">
+                    <HiOutlineBookOpen className="text-sm" />
+                  </span>
+                  <span className="text-sm font-medium text-black">
+                    learn more about RouteX
+                  </span>
+                </span>
+                <HiOutlineArrowRight className="text-sm text-gray group-hover:text-brand transition-colors" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => (window.location.href = "mailto:support@smartroute.logistics")}
+                className="flex items-center justify-between py-2.5 group cursor-pointer"
+              >
+                <span className="flex items-center gap-2.5">
+                  <span className="w-7 h-7 rounded-full bg-brand/15 flex items-center justify-center text-black">
+                    <HiOutlineChatBubbleLeftRight className="text-sm" />
+                  </span>
+                  <span className="text-sm font-medium text-black">Contact support</span>
+                </span>
+                <HiOutlineArrowRight className="text-sm text-gray group-hover:text-brand transition-colors" />
+              </button>
+            </div>
+          )}
+
+          {status === "accepted" && (
             <div>
-              <div className="p-8 space-y-6">
-                <div className="flex justify-center">
-                  <div className="w-12 h-12 rounded-full bg-red-500 text-white flex items-center justify-center shadow-md">
-                    <HiOutlineXMark className="text-2xl stroke-[2.5]" />
+              <p className="text-xs font-bold text-black mb-2.5">Next Steps:</p>
+              <div className="flex flex-col">
+                <div className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <div className="w-6 h-6 rounded-full bg-brand flex items-center justify-center shrink-0">
+                      <HiOutlineCheck className="text-xs text-black stroke-[3]" />
+                    </div>
+                    <div className="w-px flex-1 bg-[color:var(--color-border)] my-1" />
                   </div>
-                </div>
-
-                <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-red-100 text-red-600 text-[10px] font-bold tracking-wider uppercase">
-                  <span>STATUS: REJECTED</span>
-                </div>
-
-                <div className="space-y-2">
-                  <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-                    Registration Application Rejected
-                  </h1>
-                  <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
-                    We reviewed your application and unfortunately cannot
-                    proceed with your account activation at this time.
-                  </p>
-                </div>
-
-                <div className="bg-red-50/70 border-l-4 border-red-500 rounded-r-xl p-4 text-left space-y-1">
-                  <div className="flex items-center space-x-2 text-red-700 font-bold text-xs">
-                    <HiOutlineExclamationCircle className="text-sm shrink-0" />
-                    <span>Rejection Reason</span>
-                  </div>
-                  <p className="text-xs text-slate-600 leading-relaxed pl-6">
-                    {rejectionReason}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 text-left">
-                  <div className="border border-slate-200 rounded-xl p-3 bg-white">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                      APPLICATION ID
-                    </p>
-                    <p className="text-xs font-bold text-slate-800 mt-0.5">
-                      {applicationId}
-                    </p>
-                  </div>
-                  <div className="border border-slate-200 rounded-xl p-3 bg-white">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                      REVIEW DATE
-                    </p>
-                    <p className="text-xs font-bold text-slate-800 mt-0.5">
-                      {reviewDate}
+                  <div className="pb-4">
+                    <p className="text-sm font-semibold text-black">Explore your dashboard</p>
+                    <p className="text-xs text-gray mt-0.5">
+                      Get familiar with your workspace and key features.
                     </p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                  <button
-                    onClick={() => console.log("Contact support")}
-                    className="flex items-center justify-center space-x-2 w-full py-2.5 px-4 border border-slate-300 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs"
-                  >
-                    <HiOutlineChatBubbleLeftRight className="text-base" />
-                    <span>Contact Support</span>
-                  </button>
-
-                  <button
-                    onClick={handleEditDetails}
-                    className="flex items-center justify-center space-x-2 w-full py-2.5 px-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition-colors shadow-sm"
-                  >
-                    <HiOutlinePencilSquare className="text-base" />
-                    <span>Resubmit Application / Edit Details</span>
-                  </button>
+                <div className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <div className="w-6 h-6 rounded-full bg-gray-100 border border-[color:var(--color-border)] flex items-center justify-center text-[10px] font-bold text-gray shrink-0">
+                      2
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray">Set up your fleet</p>
+                    <p className="text-xs text-gray mt-0.5">
+                      Add your vehicles and drivers to get started.
+                    </p>
+                  </div>
                 </div>
-              </div>
-
-              <div className="bg-slate-50/80 border-t border-slate-100 py-3 text-center">
-                <p className="text-[11px] text-slate-500">
-                  Need help? Read our{" "}
-                  <a
-                    href="#guidelines"
-                    className="text-slate-700 underline font-medium"
-                  >
-                    Application Guidelines
-                  </a>{" "}
-                  or visit the{" "}
-                  <a
-                    href="#help"
-                    className="text-slate-700 underline font-medium"
-                  >
-                    Help Center
-                  </a>
-                  .
-                </p>
               </div>
             </div>
           )}
 
-          {/* 2. حالة الانتظار والقبول PENDING / APPROVED */}
-          {status !== "REJECTED" && (
+          {status === "rejected" && (
             <div>
-              <div className="p-8 space-y-6">
-                {status === "APPROVED" ? (
-                  <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
-                    <HiOutlineCheckCircle className="text-sm text-emerald-600" />
-                    <span>Status: ACCOUNT_APPROVED</span>
+              <p className="text-xs font-bold text-black mb-2.5">What happened?</p>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full bg-brand/15 flex items-center justify-center shrink-0">
+                    <HiOutlineDocumentText className="text-sm text-black" />
                   </div>
-                ) : (
-                  <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold">
-                    <HiOutlineClock className="text-sm text-amber-700" />
-                    <span>Status: PENDING_ADMIN_APPROVAL</span>
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-                    {status === "APPROVED"
-                      ? "Account Approved!"
-                      : "Account Under Review"}
-                  </h1>
-                  <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
-                    {status === "APPROVED"
-                      ? "Your request has been approved. Redirecting you to your control center..."
-                      : "Your fleet manager registration request has been submitted successfully and is currently being verified by the System Administrator."}
-                  </p>
-                </div>
-
-                <div className="py-2">
-                  <div className="relative flex items-center justify-between max-w-sm mx-auto">
-                    <div className="absolute top-4 left-6 right-6 h-0.5 bg-slate-200 z-0">
-                      <div
-                        className={`h-full transition-all duration-500 ${
-                          status === "APPROVED"
-                            ? "bg-emerald-500 w-full"
-                            : "bg-slate-900 w-full"
-                        }`}
-                      ></div>
-                    </div>
-
-                    <div className="relative z-10 flex flex-col items-center">
-                      <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md ${
-                          status === "APPROVED"
-                            ? "bg-emerald-500 text-white"
-                            : "bg-slate-900 text-white"
-                        }`}
-                      >
-                        <HiOutlineCheck className="text-lg font-bold" />
-                      </div>
-                      <span className="text-[11px] font-bold text-slate-900 mt-2">
-                        Submitted
-                      </span>
-                    </div>
-
-                    <div className="relative z-10 flex flex-col items-center">
-                      <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md ${
-                          status === "APPROVED"
-                            ? "bg-emerald-500 text-white"
-                            : "bg-slate-900 text-white"
-                        }`}
-                      >
-                        <HiOutlineCheck className="text-lg font-bold" />
-                      </div>
-                      <span className="text-[11px] font-bold text-slate-900 mt-2">
-                        Submitted
-                      </span>
-                    </div>
-
-                    <div className="relative z-10 flex flex-col items-center">
-                      <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                          status === "APPROVED"
-                            ? "bg-emerald-600 text-white shadow-md"
-                            : "bg-slate-100 border-2 border-slate-900 text-slate-900"
-                        }`}
-                      >
-                        {status === "APPROVED" ? (
-                          <HiOutlineCheck className="text-lg font-bold" />
-                        ) : (
-                          <HiOutlineLockClosed className="text-lg" />
-                        )}
-                      </div>
-                      <span
-                        className={`text-[11px] mt-2 ${status === "APPROVED" ? "font-bold text-emerald-600" : "font-semibold text-slate-400"}`}
-                      >
-                        Activation
-                      </span>
-                    </div>
+                  <div>
+                    <p className="text-sm font-semibold text-black">Application Details</p>
+                    <p className="text-xs text-gray mt-0.5">
+                      Some information may need to be updated.
+                    </p>
                   </div>
                 </div>
 
-                <div>
-                  {status === "PENDING" && (
-                    <button
-                      onClick={checkStatus}
-                      disabled={loading}
-                      className="inline-flex items-center space-x-2 px-6 py-2.5 bg-slate-950 text-white rounded-xl text-xs font-semibold hover:bg-slate-800 transition-colors shadow-md active:scale-95 disabled:opacity-50"
-                    >
-                      <HiOutlineArrowPath
-                        className={`text-sm ${loading ? "animate-spin" : ""}`}
-                      />
-                      <span>{loading ? "Checking..." : "Refresh Status"}</span>
-                    </button>
-                  )}
-
-                  {status === "APPROVED" && (
-                    <button
-                      onClick={() => navigate("/dashboard")}
-                      className="inline-flex items-center space-x-2 px-6 py-2.5 bg-linear-to-l from-[#4edea3] via-[#009668] to-[#007d56] bg-size-[200%_100%] bg-right hover:bg-left text-white rounded-xl text-xs font-bold transition-all duration-500 shadow-md active:scale-95"
-                    >
-                      <HiOutlineArrowRightOnRectangle className="text-lg" />
-                      <span>Go to Control Center</span>
-                    </button>
-                  )}
-                </div>
-
-                <div className="bg-slate-50/80 border border-slate-200/60 rounded-xl p-4 text-left space-y-3">
-                  <h3 className="text-xs font-bold text-slate-800">
-                    Need help?
-                  </h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 shadow-2xs">
-                        <HiOutlineEnvelope className="text-xs" />
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-slate-400 font-medium">
-                          Admin Email
-                        </p>
-                        <p className="text-xs font-bold text-slate-800">
-                          support@smartroute.logistics
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-3">
-                      <div className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 shadow-2xs">
-                        <HiOutlinePhone className="text-xs" />
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-slate-400 font-medium">
-                          Support Hotline
-                        </p>
-                        <p className="text-xs font-bold text-slate-800">
-                          +972 56 778 9251
-                        </p>
-                      </div>
-                    </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full bg-brand/15 flex items-center justify-center shrink-0">
+                    <HiOutlineMagnifyingGlass className="text-sm text-black" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-black">Review outcome</p>
+                    <p className="text-xs text-gray mt-0.5">
+                      {statusMessage || "Our team was unable to approve your account."}
+                    </p>
                   </div>
                 </div>
-              </div>
-
-              <div className="bg-slate-50/50 border-t border-slate-100 py-3 text-center">
-                <p className="text-[11px] text-slate-500 font-medium">
-                  Expected review time:{" "}
-                  <span className="text-slate-700">12-24 business hours.</span>
-                </p>
               </div>
             </div>
           )}
         </div>
-      </main>
+      </div>
 
-      {/* Footer */}
-      <footer className="w-full bg-slate-100/60 border-t border-slate-200 py-4 px-8 flex flex-col md:flex-row items-center justify-between text-[11px] text-slate-500 gap-2">
-        <p>© 2024 SmartRoute Logistics. All rights reserved.</p>
-        <div className="flex space-x-6">
-          <a href="#privacy" className="hover:text-slate-800 transition-colors">
-            Privacy Policy
-          </a>
-          <a href="#terms" className="hover:text-slate-800 transition-colors">
-            Terms of Service
-          </a>
-          <a
-            href="#security"
-            className="hover:text-slate-800 transition-colors"
-          >
-            Security
-          </a>
-        </div>
-      </footer>
+      {/* Right side - hero image, one fully composited asset per state */}
+      <div className="sticky hidden md:block top-0 h-dvh w-[60%] rounded-2xl border-6 border-white overflow-hidden bg-linear-to-tl from-brand/20 to-secondary/40">
+        <img
+          key={status}
+          src={content.hero}
+          alt=""
+          className="h-full w-full object-cover"
+        />
+      </div>
     </div>
   );
 };

@@ -190,12 +190,16 @@ const RegisterForm = () => {
     },
   ];
 
+  // Vertical input padding is a vh-based clamp (tightened): shrinks further
+  // on short viewports so a field's own height contributes less to the
+  // total. Floor (0.5rem) and ceiling (0.7rem) keep it from ever looking
+  // cramped or oversized regardless of screen height.
   const inputClasses = (field, hasIcon = true) => {
     const isFilled = !!formik.values[field];
     const isFocused = focusedField === field;
     const hasError = formik.touched[field] && formik.errors[field];
 
-    return `w-full ${hasIcon ? "pl-10" : "pl-3.5"} pr-4 py-3 border rounded-lg outline-none transition-all text-sm text-black placeholder:text-black/35 ${
+    return `w-full ${hasIcon ? "pl-10" : "pl-3.5"} pr-4 py-[clamp(0.5rem,1.2vh,0.7rem)] border rounded-lg outline-none transition-all text-sm text-black placeholder:text-black/35 ${
       hasError
         ? "border-red-500 ring-2 ring-red-500/20"
         : isFocused || isFilled
@@ -217,7 +221,7 @@ const RegisterForm = () => {
     const isFocused = focusedField === field || openDropdown === field;
     const hasError = formik.touched[field] && formik.errors[field];
 
-    return `w-full ${hasIcon ? "pl-10" : "pl-3.5"} pr-4 py-3 border rounded-lg outline-none transition-all text-sm text-left flex items-center justify-between ${
+    return `w-full ${hasIcon ? "pl-10" : "pl-3.5"} pr-4 py-[clamp(0.5rem,1.2vh,0.7rem)] border rounded-lg outline-none transition-all text-sm text-left flex items-center justify-between ${
       isFilled ? "text-black" : "text-black/35"
     } ${
       hasError
@@ -261,17 +265,20 @@ const RegisterForm = () => {
   };
 
   return (
-    <div className="w-full max-w-[400px] mx-auto space-y-6 font-base">
+    // Root gap: vh-based clamp, tightened further than the first pass.
+    // This — plus the heading size below — are the two biggest levers,
+    // since they're multiplied by how many gaps/lines exist on the page.
+    <div className="w-full max-w-[400px] mx-auto flex flex-col gap-[clamp(0.75rem,1.8vh,1.25rem)] font-base">
       {/* <img src={logo} alt="" className="w-30 mx-auto mb-2 md:w-35 lg:hidden" /> */}
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between relative">
         <div className="flex items-center gap-3">
           {step === 2 && (
             <button
               type="button"
               onClick={handleBack}
               aria-label="Go back to previous step"
-              className="text-black/60 hover:text-black transition-colors"
+              className="text-black/60 hover:text-black transition-colors absolute -top-10 -left-0 md:-top-10 md:-left-8"
             >
               <HiOutlineArrowLeft className="text-xl" />
             </button>
@@ -340,21 +347,25 @@ const RegisterForm = () => {
           : "Step 2 of 2: Tell us about your company"}
       </span>
 
-      <div className="text-left space-y-1.5">
+      <div className="text-left space-y-1">
         {step === 1 ? (
           <>
-            <h2 className="text-3xl md:text-4xl font-bold text-black">
-              Create your<br /> <span className="text-brand">account.</span>
+            {/* Heading is the single largest element on the page, so its
+               size is the biggest lever for vertical space. Tightened
+               floor/ceiling versus the first pass. */}
+            <h2 className="text-[clamp(1.5rem,2.8vh,2rem)] leading-tight font-bold text-black">
+              Create your
+              <br /> <span className="text-brand">account.</span>
             </h2>
-            <p className="text-black/50 text-sm md:text-base">
-              Enter your details to create your account and<br/> begin your
-              application.
+            <p className="text-black/50 text-sm md:text-sm">
+              Enter your details to create your account and
+              <br /> begin your application.
             </p>
           </>
         ) : (
           <>
-            <h2 className="text-3xl md:text-4xl font-bold text-black">
-              Tell us about <span className="text-brand">your company.</span>
+            <h2 className="text-[clamp(1.5rem,2.8vh,2rem)] leading-tight font-bold text-black">
+              Tell us about<br /> <span className="text-brand">your company.</span>
             </h2>
             <p className="text-black/50 text-sm md:text-base">
               Add your company details to complete your application.
@@ -369,13 +380,9 @@ const RegisterForm = () => {
         </div>
       )}
 
-      <form
-        onSubmit={formik.handleSubmit}
-        noValidate
-        className="w-full space-y-4"
-      >
+      <form onSubmit={formik.handleSubmit} noValidate className="w-full">
         <div
-          className={`space-y-4 transition-all duration-300 ease-in-out ${
+          className={`flex flex-col gap-[clamp(0.625rem,1.4vh,1rem)] transition-all duration-300 ease-in-out ${
             isTransitioning
               ? direction === "forward"
                 ? "opacity-0 -translate-x-3"
@@ -389,7 +396,7 @@ const RegisterForm = () => {
               <div className="flex flex-col w-full text-left">
                 {/* حقول الإدخال جنباً إلى جنب */}
                 <div className="flex items-center justify-between w-full gap-6">
-                  <div className="space-y-1.5 text-left w-1/2">
+                  <div className="space-y-1 text-left w-1/2">
                     <label className="block text-sm font-medium text-black">
                       First Name
                     </label>
@@ -411,7 +418,7 @@ const RegisterForm = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-1.5 text-left w-1/2">
+                  <div className="space-y-1 text-left w-1/2">
                     <label className="block text-sm font-medium text-black">
                       Last Name
                     </label>
@@ -436,14 +443,14 @@ const RegisterForm = () => {
 
                 {((formik.touched.firstName && formik.errors.firstName) ||
                   (formik.touched.lastName && formik.errors.lastName)) && (
-                  <p className="text-red-500 text-xs mt-1">
+                  <p className="text-red-500 text-xs mt-0.5">
                     {formik.errors.firstName || formik.errors.lastName}
                   </p>
                 )}
               </div>
 
               {/* Business Email */}
-              <div className="space-y-1.5 text-left w-full">
+              <div className="space-y-1 text-left w-full">
                 <label className="block text-sm font-medium text-black">
                   Email Address
                 </label>
@@ -464,14 +471,14 @@ const RegisterForm = () => {
                   />
                 </div>
                 {formik.touched.email && formik.errors.email && (
-                  <p className="text-error text-xs mt-1">
+                  <p className="text-error text-xs mt-0.5">
                     {formik.errors.email}
                   </p>
                 )}
               </div>
 
               {/* Password */}
-              <div className="space-y-1.5 text-left">
+              <div className="space-y-1 text-left">
                 <label className="block text-sm font-medium text-black">
                   Password
                 </label>
@@ -483,7 +490,7 @@ const RegisterForm = () => {
                     placeholder="Enter your password"
                     value={formik.values.password}
                     onChange={formik.handleChange}
-                    onFocus={() => (setFocusedField("password"))}
+                    onFocus={() => setFocusedField("password")}
                     onBlur={(e) => {
                       formik.handleBlur(e);
                       setFocusedField(null);
@@ -503,14 +510,53 @@ const RegisterForm = () => {
                   </button>
                 </div>
                 {formik.touched.password && formik.errors.password && (
-                  <p className="text-error text-xs mt-1">
+                  <p className="text-error text-xs mt-0.5">
                     {formik.errors.password}
                   </p>
                 )}
+
+                {/* Password criteria checklist: only rendered visible while
+                   the password field itself is focused. Collapsed via
+                   max-height + opacity (rather than unmounting abruptly)
+                   so it animates in/out instead of causing a layout jump.
+                   This is purely a UI/visibility change — formik.errors,
+                   validation, and the `met` calculations are untouched. */}
+                <div
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    focusedField === "password"
+                      ? "max-h-40 opacity-100 mt-0.5"
+                      : "max-h-0 opacity-0 mt-0"
+                  }`}
+                >
+                  <div className="grid grid-cols-1 gap-x-3 gap-y-1 pt-0.5 pl-2">
+                    {passwordCriteria.map((c) => (
+                      <div key={c.key} className="flex items-center gap-1.5">
+                        <span
+                          className={`flex items-center justify-center w-4 h-4 rounded-full border transition-all shrink-0 ${
+                            c.met
+                              ? "bg-brand border-brand animate-[check-pop_0.3s_ease-out]"
+                              : "border-border bg-transparent"
+                          }`}
+                        >
+                          {c.met && (
+                            <HiMiniCheck className="text-white text-xs" />
+                          )}
+                        </span>
+                        <span
+                          className={`text-xs transition-colors ${
+                            c.met ? "text-black" : "text-black/90"
+                          }`}
+                        >
+                          {c.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               {/* Confirm Password */}
-              <div className="space-y-1.5 text-left">
+              <div className="space-y-1 text-left">
                 <label className="block text-sm font-medium text-black">
                   Confirm Password
                 </label>
@@ -545,42 +591,16 @@ const RegisterForm = () => {
                 </div>
                 {formik.touched.confirmPassword &&
                   formik.errors.confirmPassword && (
-                    <p className="text-error text-xs mt-1">
+                    <p className="text-error text-xs mt-0.5">
                       {formik.errors.confirmPassword}
                     </p>
                   )}
-
-                {/* Password criteria checklist */}
-                <div className="grid grid-cols-1 gap-x-3 gap-y-1.5 pt-1 pl-2">
-                  {passwordCriteria.map((c) => (
-                    <div key={c.key} className="flex items-center gap-1.5">
-                      <span
-                        className={`flex items-center justify-center w-4 h-4 rounded-full border transition-all shrink-0 ${
-                          c.met
-                            ? "bg-brand border-brand animate-[check-pop_0.3s_ease-out]"
-                            : "border-border bg-transparent"
-                        }`}
-                      >
-                        {c.met && (
-                          <HiMiniCheck className="text-white text-xs" />
-                        )}
-                      </span>
-                      <span
-                        className={`text-xs transition-colors ${
-                          c.met ? "text-black" : "text-black/90"
-                        }`}
-                      >
-                        {c.label}
-                      </span>
-                    </div>
-                  ))}
-                </div>
               </div>
             </>
           ) : (
             <>
               {/* Company Name */}
-              <div className="space-y-1.5 text-left">
+              <div className="space-y-1 text-left">
                 <label className="block text-sm font-medium text-black">
                   Company Name
                 </label>
@@ -603,14 +623,14 @@ const RegisterForm = () => {
                   />
                 </div>
                 {formik.touched.companyName && formik.errors.companyName && (
-                  <p className="text-error text-xs mt-1">
+                  <p className="text-error text-xs mt-0.5">
                     {formik.errors.companyName}
                   </p>
                 )}
               </div>
 
               {/* Country */}
-              <div className="space-y-1.5 text-left">
+              <div className="space-y-1 text-left">
                 <label className="block text-sm font-medium text-black">
                   Country
                 </label>
@@ -683,14 +703,14 @@ const RegisterForm = () => {
                   )}
                 </div>
                 {formik.touched.country && formik.errors.country && (
-                  <p className="text-red-500 text-xs mt-1">
+                  <p className="text-red-500 text-xs mt-0.5">
                     {formik.errors.country}
                   </p>
                 )}
               </div>
 
               {/* Business Phone Number */}
-              <div className="space-y-1.5 text-left">
+              <div className="space-y-1 text-left">
                 <label className="block text-sm font-medium text-black">
                   Business Phone Number
                 </label>
@@ -703,7 +723,7 @@ const RegisterForm = () => {
                           openDropdown === "dialCode" ? null : "dialCode",
                         )
                       }
-                      className="flex items-center gap-1.5 px-3 py-3 h-full border border-border rounded-lg bg-white text-black font-medium hover:border-brand/50 transition-all cursor-pointer select-none shrink-0"
+                      className="flex items-center gap-1.5 px-3 py-[clamp(0.5rem,1.2vh,0.7rem)] h-full border border-border rounded-lg bg-white text-black font-medium hover:border-brand/50 transition-all cursor-pointer select-none shrink-0"
                     >
                       <span>
                         {GULF_DIAL_CODES.find((d) => d.code === dialCode)?.flag}
@@ -781,14 +801,14 @@ const RegisterForm = () => {
                   </div>
                 </div>
                 {formik.touched.phone && formik.errors.phone && (
-                  <p className="text-error text-xs mt-1">
+                  <p className="text-error text-xs mt-0.5">
                     {formik.errors.phone}
                   </p>
                 )}
               </div>
 
               {/* How did you hear about us? (Optional) */}
-              <div className="space-y-1.5 text-left">
+              <div className="space-y-1 text-left">
                 <label className="block text-sm font-medium text-black">
                   How did you hear about us?{" "}
                   <span className="text-black/40 font-normal">(Optional)</span>
@@ -863,48 +883,50 @@ const RegisterForm = () => {
           )}
         </div>
 
-        {step === 1 ? (
-          <button
-            type="button"
-            onClick={handleNext}
-            className="w-full bg-brand hover:bg-secondary text-black font-bold py-3.5 rounded-lg transition-all duration-300 ease-in-out shadow-sm hover:shadow-md active:scale-[0.99] text-sm cursor-pointer"
-          >
-            Continue
-          </button>
-        ) : (
-          <>
+        <div className="mt-[clamp(0.625rem,1.3vh,0.875rem)]">
+          {step === 1 ? (
             <button
-              type="submit"
-              disabled={formik.isSubmitting}
-              className="w-full bg-brand hover:bg-secondary text-black font-bold py-3.5 rounded-lg transition-all duration-300 ease-in-out shadow-sm hover:shadow-md active:scale-[0.99] text-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              type="button"
+              onClick={handleNext}
+              className="w-full bg-brand hover:bg-secondary text-black font-bold py-[clamp(0.55rem,1.3vh,0.75rem)] rounded-[6px] transition-all duration-300 ease-in-out shadow-sm hover:shadow-md active:scale-[0.99] text-sm cursor-pointer mt-8"
             >
-              {formik.isSubmitting
-                ? "Redirecting..."
-                : "Continue to verification"}
+              Continue
             </button>
-            <p className="text-center text-[14px] text-black/50 pt-1">
-              By submitting this application, you agree to our{" "} <br />
-              <a
-                href="#terms"
-                className="text-brand hover:underline font-medium"
+          ) : (
+            <>
+              <button
+                type="submit"
+                disabled={formik.isSubmitting}
+                className="w-full bg-brand hover:bg-secondary text-black font-bold py-[clamp(0.55rem,1.3vh,0.75rem)] rounded-lg transition-all duration-300 ease-in-out shadow-sm hover:shadow-md active:scale-[0.99] text-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer mt-8"
               >
-                Terms of Service
-              </a>{" "}
-              and{" "}
-              <a
-                href="#privacy"
-                className="text-brand hover:underline font-medium"
-              >
-                Privacy Policy
-              </a>
-              .
-            </p>
-          </>
-        )}
+                {formik.isSubmitting
+                  ? "Redirecting..."
+                  : "Continue to verification"}
+              </button>
+              <p className="text-center text-[14px] text-black/50 pt-1">
+                By submitting this application, you agree to our <br />
+                <a
+                  href="#terms"
+                  className="text-brand hover:underline font-medium"
+                >
+                  Terms of Service
+                </a>{" "}
+                and{" "}
+                <a
+                  href="#privacy"
+                  className="text-brand hover:underline font-medium"
+                >
+                  Privacy Policy
+                </a>
+                .
+              </p>
+            </>
+          )}
+        </div>
       </form>
 
       {step === 1 && (
-        <p className="text-center text-xs text-black/50 pt-1">
+        <p className="text-center text-xs text-black/50">
           Already have an account?{" "}
           <Link to="/login" className="font-medium text-brand hover:underline">
             Log in

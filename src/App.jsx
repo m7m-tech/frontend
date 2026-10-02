@@ -8,6 +8,7 @@ import EmailVerification from "./sections/EmailVerification";
 import EmailForgotPassword from "./components/EmailForgotPassword";
 import PasswordEmailVerification from "./components/PasswordEmailVerification";
 import ResetPassword from "./components/ResetPassword";
+import Dashboard from "./sections/Dashboard";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verification" element={<EmailVerification />} />
           <Route path="/account-under-review" element={<AccountUnderReview />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           
           {/* Catch All */}
           <Route path="*" element={<Navigate to="/login" replace />} />

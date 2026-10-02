@@ -15,11 +15,13 @@ const Register = () => {
   }, [isAuthenticated, isLoading, navigate]);
 
   return (
-    // No h-screen/overflow-hidden here: the page scrolls normally (single,
-    // native browser scrollbar) instead of a nested scroll container.
-    <div className="min-h-screen w-full flex">
-      {/* Left side - form, part of normal document flow */}
-      <div className="w-full lg:w-[40%] flex items-start justify-center px-6 md:px-10 py-10">
+    // h-dvh (dynamic viewport height) instead of min-h-screen: locks the
+    // page to exactly one viewport's worth of height. overflow-hidden on
+    // the root guarantees the page itself never scrolls.
+    <div className="h-dvh w-full flex overflow-hidden">
+      <div
+        className="w-full lg:w-[40%] h-full flex items-center justify-center px-6 md:px-10 py-[clamp(0.5rem,2.2vh,1.5rem)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+      >
         <RegisterForm />
       </div>
 
@@ -27,7 +29,7 @@ const Register = () => {
           so it always renders at the exact viewport size with no empty
           space appearing below it. */}
       <div className="hidden lg:block lg:w-[60%] relative">
-        <div className="sticky top-0 h-screen w-full rounded-2xl border-6 border-white overflow-hidden bg-linear-to-tl from-brand/20 to-secondary/40">
+        <div className="sticky top-0 h-dvh w-full rounded-2xl border-6 border-white overflow-hidden bg-linear-to-tl from-brand/20 to-secondary/40">
           <img
             src={signupImg}
             alt="hero"

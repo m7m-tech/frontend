@@ -29,7 +29,7 @@ const Login = () => {
         <LoginForm />
       </div>
       {/* right hero side */}
-      <div className="sticky top-0 h-screen w-[60%] rounded-tl-3xl rounded-bl-3xl overflow-hidden bg-linear-to-tl from-brand/20 to-secondary/40">
+      <div className="sticky hidden md:block top-0 h-dvh w-[60%] rounded-2xl border-6 border-white overflow-hidden bg-linear-to-tl from-brand/20 to-secondary/40">
         <img src={heroSide} alt="hero" className="h-full w-full object-cover rounded-tl-3xl rounded-bl-3xl" />
       </div>
     </div>
