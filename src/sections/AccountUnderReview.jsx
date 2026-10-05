@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import useCompany from "../hooks/useCompany";
+import { useWhatsAppStatus } from "../hooks/useWhatsApp";
+import { WA_STATE } from "../services/whatsappService";
+import { NON_APPROVED_STATUSES } from "../services/companyService";
 import {
   HiOutlineCheck,
   HiOutlineBookOpen,
@@ -81,7 +85,7 @@ const STATUS_CONTENT = {
 
 const AccountUnderReview = () => {
   const navigate = useNavigate();
-  const { checkCompanyStatus, logout } = useAuth();
+  const { checkCompanyStatus, logout, user } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -94,6 +98,13 @@ const AccountUnderReview = () => {
   const [status, setStatus] = useState(null);
   const [statusMessage, setStatusMessage] = useState("");
   const [fetchError, setFetchError] = useState("");
+
+  // WhatsApp linking is the step after approval: only read its (backend)
+  // status once the account is actually approved.
+  const { companyId } = useCompany();
+  const whatsapp = useWhatsAppStatus(status === "accepted" ? companyId : null);
+  const whatsappConnected = whatsapp.data?.state === WA_STATE.CONNECTED;
+  const whatsappChecking = status === "accepted" && Boolean(companyId) && whatsapp.isLoading;
 
   const checkStatus = useCallback(
     async (signal) => {
@@ -125,8 +136,10 @@ const AccountUnderReview = () => {
   useEffect(() => {
     // Lifetime gate: if this user already confirmed their activation once,
     // skip straight to the dashboard — this screen is never shown again.
+    // Not when the known status says otherwise — the app layout sends such
+    // users here, and skipping straight back would loop between the two.
     const alreadyActivated = localStorage.getItem(ACTIVATED_FLAG_KEY) === "true";
-    if (alreadyActivated) {
+    if (alreadyActivated && !NON_APPROVED_STATUSES.has(user?.status)) {
       navigate("/dashboard", { replace: true });
       return;
     }
@@ -136,13 +149,15 @@ const AccountUnderReview = () => {
     const controller = new AbortController();
     checkStatus(controller.signal);
     return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkStatus, navigate]);
 
   const handlePrimaryAction = () => {
     if (status === "accepted") {
       // Set once, for life — future logins skip this page entirely.
       localStorage.setItem(ACTIVATED_FLAG_KEY, "true");
-      navigate("/dashboard");
+      // Approved but WhatsApp not linked yet → the setup step comes first.
+      navigate(whatsappConnected ? "/dashboard" : "/whatsapp-setup");
     } else if (status === "rejected") {
       window.location.href = "mailto:support@smartroute.logistics";
     }
@@ -256,9 +271,16 @@ const AccountUnderReview = () => {
             <button
               type="button"
               onClick={handlePrimaryAction}
-              className="w-full font-semibold py-[clamp(0.75rem,1.7vh,0.95rem)] rounded-xl text-sm bg-brand hover:bg-secondary text-black shadow-sm hover:shadow-md active:scale-[0.99] transition-all duration-300 ease-in-out cursor-pointer"
+              disabled={whatsappChecking}
+              className="w-full font-semibold py-[clamp(0.75rem,1.7vh,0.95rem)] rounded-xl text-sm bg-brand hover:bg-secondary text-black shadow-sm hover:shadow-md active:scale-[0.99] transition-all duration-300 ease-in-out cursor-pointer disabled:opacity-60 disabled:cursor-wait"
             >
-              {status === "accepted" ? "Go to Dashboard" : "Contact Support"}
+              {status === "accepted"
+                ? whatsappChecking
+                  ? "Checking WhatsApp…"
+                  : whatsappConnected
+                  ? "Go to Dashboard"
+                  : "Connect WhatsApp"
+                : "Contact Support"}
             </button>
           )}
 

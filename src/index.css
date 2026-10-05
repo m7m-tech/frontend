@@ -30,6 +30,14 @@
   --color-soft: #F0FBD7;
   --color-warning: #FDE8E8;
 
+  /* App shell (dashboard) */
+  --color-canvas: #F4F5F2;
+  --color-line: #ECECE8;
+  --color-ink-soft: #8A8A85;
+  --color-alert: #F04A12;
+  --color-alert-soft: #FFEDE6;
+  --color-skeleton: #ECEDE9;
+
   /* Fonts */
   --font-monument: "Monument Extended", sans-serif;
   --font-base: "Satoshi", sans-serif;
@@ -118,4 +126,69 @@ body {
     transform: scale(1);
     opacity: 1;
   }
+}
+
+/* =========================
+   Skeleton shimmer
+========================= */
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-skeleton);
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+  }
+}
+
+/* =========================
+   Leaflet (RouteX map)
+========================= */
+.routex-map.leaflet-container {
+  font-family: var(--font-base);
+  background: #eef0ea;
+}
+
+/* Mute the default OSM palette toward the design's soft grey/green map. */
+.routex-map .leaflet-tile-pane {
+  filter: grayscale(0.75) sepia(0.12) hue-rotate(40deg) brightness(1.06) contrast(0.88);
+}
+
+.routex-map .leaflet-popup-content-wrapper {
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(20, 20, 20, 0.12);
+}
+
+.routex-map .leaflet-popup-content {
+  margin: 12px 14px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.routex-map .leaflet-control-attribution {
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.75);
+  border-top-left-radius: 8px;
+}
+
+.routex-marker {
+  background: transparent;
+  border: 0;
 }

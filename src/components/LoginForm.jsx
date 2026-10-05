@@ -253,7 +253,7 @@ const LoginForm = () => {
         <button
           type="submit"
           disabled={formik.isSubmitting}
-          className="w-full bg-brand hover:bg-brand/90 text-black font-semibold py-3 rounded-lg transition-all flex justify-center items-center disabled:opacity-50"
+          className="w-full bg-brand hover:bg-brand/90 text-black font-semibold py-3 rounded-lg transition-all flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           {formik.isSubmitting ? "Signing in..." : "Log in"}
         </button>
